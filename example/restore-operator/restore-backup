@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+SENSU_OPERATOR_ROOT=$(dirname "${BASH_SOURCE[0]}")/../..
+
+# shellcheck disable=SC1090
+source "${SENSU_OPERATOR_ROOT}/example/backup-create-restore.bash"
+
+parse_options "$@"
+restore

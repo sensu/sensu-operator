@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dummy-service
+spec:
+  replicas: 2
+  template:
+    metadata:
+      name: dummy-service
+      labels:
+        app: dummy-service
+    spec:
+      containers:
+        - name: sensu-agent
+          image: sensuapp/sensu-go:2.0.0-alpha
+          command: ["/opt/sensu/bin/sensu-agent", "start"]
+          env:
+            - name: SENSU_BACKEND_URL
+              value: ws://example-sensu-cluster-agent.default.svc.cluster.local:8081
+            - name: SENSU_SUBSCRIPTIONS
+              value: dummy
+        - name: dummy-service
+          image: busybox
+          command: ["/bin/sleep", "100000"]
