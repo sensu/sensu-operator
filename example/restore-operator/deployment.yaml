@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sensu-restore-operator
+  labels:
+    name: sensu-restore-operator
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: sensu-restore-operator
+    spec:
+      containers:
+      - name: sensu-restore-operator
+        image: kinvolk/sensu-operator:v0.0.1
+        command:
+        - sensu-restore-operator
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name

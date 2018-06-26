@@ -1,0 +1,15 @@
+apiVersion: "sensu.io/v1beta1"
+kind: "SensuRestore"
+metadata:
+  # The restore CR name must be the same as spec.sensuCluster.name
+  name: <CLUSTER_NAME>
+spec:
+  sensuCluster:
+    # The namespace is the same as this SensuRestore CR
+    name: <CLUSTER_NAME>
+  backupStorageType: S3
+  s3:
+    # The format of "path" must be: "<s3-bucket-name>/<path-to-backup-file>"
+    # e.g: "mybucket/etcd.backup"
+    path: <AWS_BUCKET_NAME>/<BACKUP_NAME>
+    awsSecret: <AWS_SECRET_NAME>

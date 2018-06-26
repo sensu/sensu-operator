@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sensu-backup-operator
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: sensu-backup-operator
+    spec:
+      containers:
+      - name: sensu-backup-operator
+        image: kinvolk/sensu-operator:v0.0.1
+        command:
+        - sensu-backup-operator
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name

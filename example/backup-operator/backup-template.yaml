@@ -1,0 +1,12 @@
+apiVersion: "sensu.io/v1beta1"
+kind: "SensuBackup"
+metadata:
+  name: <BACKUP_NAME>
+spec:
+  etcdEndpoints: ["<CLUSTER_NAME>.default.svc.cluster.local:2379"]
+  storageType: S3
+  s3:
+    # The format of "path" must be: "<s3-bucket-name>/<path-to-backup-file>"
+    # e.g: "mybucket/etcd.backup"
+    path: <AWS_BUCKET_NAME>/<BACKUP_NAME>
+    awsSecret: <AWS_SECRET_NAME>
