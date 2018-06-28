@@ -342,7 +342,7 @@ func NewSensuPodPVC(m *etcdutil.Member, pvcSpec v1.PersistentVolumeClaimSpec, cl
 }
 
 func newSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state, token string, cs api.ClusterSpec) *v1.Pod {
-	commands := fmt.Sprintf("/usr/local/bin/sensu-backend start --state-dir=%s --name=%s --initial-advertise-peer-urls=%s "+
+	commands := fmt.Sprintf("/usr/local/bin/sensu-backend start --log-level=info --state-dir=%s --name=%s --initial-advertise-peer-urls=%s "+
 		"--listen-peer-urls=%s --listen-client-urls=%s "+
 		"--initial-cluster=%s --initial-cluster-state=%s",
 		stateDir, m.Name, m.PeerURL(), m.ListenPeerURL(), m.ListenClientURL(), strings.Join(initialCluster, ","), state)
