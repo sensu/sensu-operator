@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defaultRepository = "sensuapp/sensu-go"
+	defaultRepository = "sensu/sensu"
 	// TODO: probably should default to a stable version eventually
 	DefaultSensuVersion = "master"
 )

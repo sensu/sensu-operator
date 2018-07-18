@@ -131,5 +131,7 @@ func (r *Restore) serveBackup(w http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("failed to write backup to %s: %v", req.RemoteAddr, err)
 	}
+
+	logrus.Infof("successfully sent backup to %s", req.RemoteAddr)
 	return nil
 }
