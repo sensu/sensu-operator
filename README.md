@@ -114,6 +114,7 @@ Then run
 
 ```
 eval $(minikube docker-env)
+./build.sh build
 ./build.sh docker
 ```
 
