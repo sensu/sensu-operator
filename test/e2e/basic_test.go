@@ -15,9 +15,12 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
 	"github.com/kinvolk/sensu-operator/test/e2e/e2eutil"
 	"github.com/kinvolk/sensu-operator/test/e2e/framework"
 )
@@ -40,5 +43,45 @@ func TestCreateCluster(t *testing.T) {
 
 	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 6, testSensu); err != nil {
 		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+	}
+
+	testSensuName := testSensu.ObjectMeta.Name
+
+	sensuNodePortServiceName := fmt.Sprintf("%s-api-external", testSensuName)
+	sensuNodePortService := e2eutil.NewAPINodePortService(testSensuName, sensuNodePortServiceName)
+
+	if _, err := f.KubeClient.CoreV1().Services("default").Create(sensuNodePortService); err != nil {
+		t.Fatalf("failed to create API service of type node port: %v", err)
+	}
+	defer func() {
+		if err := f.KubeClient.CoreV1().Services(f.Namespace).Delete(sensuNodePortServiceName, nil); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	dummyDeployment := e2eutil.NewDummyDeployment(testSensuName)
+	dummyDeployment, err = k8sutil.CreateAndWaitDeployment(f.KubeClient, f.Namespace, dummyDeployment, 60*time.Second)
+	if err != nil {
+		t.Fatalf("failed to create dummy deployment: %v", err)
+	}
+	defer func() {
+		if err := e2eutil.DeleteDummyDeployment(f.KubeClient, "default", dummyDeployment.ObjectMeta.Name); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	apiURL := "http://192.168.99.100:31180"
+
+	sensuClient, err := e2eutil.NewSensuClient(apiURL)
+	if err != nil {
+		t.Fatalf("failed to initialize sensu client: %v", err)
+	}
+
+	entities, err := sensuClient.ListEntities("default")
+	if err != nil {
+		t.Fatalf("failed to list entities: %v", err)
+	}
+	if len(entities) != 2 {
+		t.Fatalf("expected to find two entities but found %d", len(entities))
 	}
 }

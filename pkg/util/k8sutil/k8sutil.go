@@ -271,6 +271,41 @@ func CreateAndWaitPod(kubecli kubernetes.Interface, ns string, pod *v1.Pod, time
 	return retPod, nil
 }
 
+// CreateAndWaitDeployment creates a deployment and waits until the defined
+// number of replicas is reached
+func CreateAndWaitDeployment(kubecli kubernetes.Interface, ns string, deployment *appsv1beta1.Deployment, timeout time.Duration) (*appsv1beta1.Deployment, error) {
+	deployment, err := kubecli.AppsV1beta1().Deployments(ns).Create(deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	interval := 5 * time.Second
+	var retDeployment *appsv1beta1.Deployment
+	err = retryutil.Retry(interval, int(timeout/(interval)), func() (bool, error) {
+		retDeployment, err = kubecli.AppsV1beta1().Deployments(ns).Get(deployment.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		switch {
+		case retDeployment.Status.ReadyReplicas == *deployment.Spec.Replicas:
+			return true, nil
+		case retDeployment.Status.ReadyReplicas < *deployment.Spec.Replicas:
+			return false, nil
+		default:
+			return false, fmt.Errorf("unexpected retDeployment.Status.ReadyReplicas: %v", retDeployment.Status.ReadyReplicas)
+		}
+	})
+
+	if err != nil {
+		if retryutil.IsRetryFailure(err) {
+			return nil, fmt.Errorf("failed to wait deployment running, it is still pending: %v", err)
+		}
+		return nil, fmt.Errorf("failed to wait deployment running: %v", err)
+	}
+
+	return retDeployment, nil
+}
+
 func newSensuServiceManifest(svcName, clusterName, clusterIP string, ports []v1.ServicePort) *v1.Service {
 	labels := LabelsForCluster(clusterName)
 	svc := &v1.Service{
