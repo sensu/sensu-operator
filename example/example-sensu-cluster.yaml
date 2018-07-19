@@ -7,5 +7,5 @@ metadata:
   # annotations:
   #   sensu.io/scope: clusterwide
 spec:
-  size: 1
+  size: 3
   version: "master"
