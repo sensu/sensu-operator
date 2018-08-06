@@ -105,6 +105,30 @@ func NewDummyDeployment(clusterName string) *appsv1beta1.Deployment {
 	}
 }
 
+func NewSensuBackup(clusterName, backupName string) *api.SensuBackup {
+	storageType := api.BackupStorageTypeS3
+	s3BackupSource := &api.S3BackupSource{
+		Path:           fmt.Sprintf("sensu-backup-test/%s", backupName),
+		AWSSecret:      "sensu-backups-aws-secret",
+		Endpoint:       "minio-service.default.svc.cluster.local:9000",
+		ForcePathStyle: true,
+		DisableSSL:     true,
+	}
+	backupSource := api.BackupSource{
+		S3: s3BackupSource,
+	}
+	return &api.SensuBackup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: backupName,
+		},
+		Spec: api.BackupSpec{
+			EtcdEndpoints: []string{fmt.Sprintf("%s.default.svc.cluster.local:2379", clusterName)},
+			StorageType:   storageType,
+			BackupSource:  backupSource,
+		},
+	}
+}
+
 // NameLabelSelector returns a label selector of the form name=<name>
 func NameLabelSelector(name string) map[string]string {
 	return map[string]string{"name": name}
