@@ -56,8 +56,6 @@ jobs:
             cat <<EOF >s3creds/config
             [default]
             region = eu-central-1
-            host_base = minio-service.default.svc.cluster.local:9000
-            use_https = False
             EOF
             kubectl create secret generic sensu-backups-aws-secret --from-file s3creds/credentials --from-file s3creds/config
             kubectl apply -f .circleci/minio-deployment.yml
@@ -69,6 +67,7 @@ jobs:
           name: Run e2e tests
           command: |
             export SENSU_API_URL="http://127.0.0.1:31180"
+            export S3_ADDR="127.0.0.1:31234"
             KUBECONFIG=~/.kube/config \
             OPERATOR_IMAGE=kinvolk/sensu-operator:test \
             TEST_NAMESPACE=default \
