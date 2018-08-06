@@ -70,7 +70,10 @@ func TestCreateCluster(t *testing.T) {
 		}
 	}()
 
-	apiURL := "http://192.168.99.100:31180"
+	apiURL := os.Getenv("SENSU_API_URL")
+	if apiURL == "" {
+		apiURL = "http://192.168.99.100:31180"
+	}
 
 	sensuClient, err := e2eutil.NewSensuClient(apiURL)
 	if err != nil {
