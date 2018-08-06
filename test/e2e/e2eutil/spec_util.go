@@ -80,7 +80,7 @@ func NewDummyDeployment(clusterName string) *appsv1beta1.Deployment {
 					Containers: []v1.Container{
 						{
 							Name:    "sensu-agent",
-							Image:   "sensuapp/sensu-go:2.0.0-alpha",
+							Image:   "sensu/sensu:2.0.0-beta.3.1",
 							Command: []string{"/opt/sensu/bin/sensu-agent", "start"},
 							Env: []v1.EnvVar{
 								{
