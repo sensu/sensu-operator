@@ -85,6 +85,9 @@ type S3RestoreSource struct {
 	// Endpoint if blank points to aws. If specified, can point to s3 compatible object
 	// stores.
 	Endpoint string `json:"endpoint"`
+
+	ForcePathStyle bool
+	DisableSSL     bool
 }
 
 type ABSRestoreSource struct {
