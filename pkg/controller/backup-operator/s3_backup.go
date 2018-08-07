@@ -19,10 +19,10 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/coreos/etcd-operator/pkg/util/awsutil/s3factory"
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/backup"
 	"github.com/kinvolk/sensu-operator/pkg/backup/writer"
+	"github.com/kinvolk/sensu-operator/pkg/util/awsutil/s3factory"
 
 	"k8s.io/client-go/kubernetes"
 )
@@ -31,7 +31,7 @@ import (
 // handleS3 saves etcd cluster's backup to specificed S3 path.
 func handleS3(ctx context.Context, kubecli kubernetes.Interface, s *api.S3BackupSource, endpoints []string, clientTLSSecret, namespace string) (*api.BackupStatus, error) {
 	// TODO: controls NewClientFromSecret with ctx. This depends on upstream kubernetes to support API calls with ctx.
-	cli, err := s3factory.NewClientFromSecret(kubecli, namespace, s.Endpoint, s.AWSSecret)
+	cli, err := s3factory.NewClientFromSecret(kubecli, namespace, s.Endpoint, s.AWSSecret, s.ForcePathStyle, s.DisableSSL)
 	if err != nil {
 		return nil, err
 	}

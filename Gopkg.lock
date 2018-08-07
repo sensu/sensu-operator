@@ -90,7 +90,6 @@
   name = "github.com/coreos/etcd-operator"
   packages = [
     "pkg/apis/etcd/v1beta2",
-    "pkg/util/awsutil/s3factory",
     "pkg/util/azureutil/absfactory",
     "pkg/util/constants",
     "pkg/util/etcdutil",
@@ -653,6 +652,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9c9b090bdfb73ec7a9f4864dd5c27f80df212e4aba730e9a211eb65d2273b14"
+  inputs-digest = "3cd4d3bcdfa82d4e7db28f05e82a83ebbf4355d91722e4180ce7aa0e89a9ca5d"
   solver-name = "gps-cdcl"
   solver-version = 1

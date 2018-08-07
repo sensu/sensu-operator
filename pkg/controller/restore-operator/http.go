@@ -20,11 +20,11 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/coreos/etcd-operator/pkg/util/awsutil/s3factory"
 	"github.com/coreos/etcd-operator/pkg/util/azureutil/absfactory"
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/backup/backupapi"
 	"github.com/kinvolk/sensu-operator/pkg/backup/reader"
+	"github.com/kinvolk/sensu-operator/pkg/util/awsutil/s3factory"
 
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,7 +91,7 @@ func (r *Restore) serveBackup(w http.ResponseWriter, req *http.Request) error {
 			return errors.New("invalid s3 restore source field (spec.s3), must specify all required subfields")
 		}
 
-		s3Cli, err := s3factory.NewClientFromSecret(r.kubecli, r.namespace, s3RestoreSource.Endpoint, s3RestoreSource.AWSSecret)
+		s3Cli, err := s3factory.NewClientFromSecret(r.kubecli, r.namespace, s3RestoreSource.Endpoint, s3RestoreSource.AWSSecret, s3RestoreSource.ForcePathStyle, s3RestoreSource.DisableSSL)
 		if err != nil {
 			return fmt.Errorf("failed to create S3 client: %v", err)
 		}
