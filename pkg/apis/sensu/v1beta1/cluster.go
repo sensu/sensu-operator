@@ -174,11 +174,6 @@ func (c *ClusterSpec) Validate() error {
 			}
 		}
 	}
-
-	if c.Size != 1 {
-		return errors.New("spec: cluster size >1 is not supported for now")
-	}
-
 	return nil
 }
 
