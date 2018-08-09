@@ -48,6 +48,16 @@ func KillMembers(kubecli kubernetes.Interface, namespace string, names ...string
 	return nil
 }
 
+func DeleteDummyDeployment(kubecli kubernetes.Interface, nameSpace, name string) error {
+	gracePeriod := int64(0)
+	deletePolicy := metav1.DeletePropagationBackground
+	deleteOptions := &metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+		PropagationPolicy:  &deletePolicy,
+	}
+	return kubecli.AppsV1beta1().Deployments(nameSpace).Delete(name, deleteOptions)
+}
+
 func LogfWithTimestamp(t *testing.T, format string, args ...interface{}) {
 	t.Log(time.Now(), fmt.Sprintf(format, args...))
 }

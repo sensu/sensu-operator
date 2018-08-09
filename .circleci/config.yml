@@ -68,6 +68,7 @@ jobs:
       - run:
           name: Run e2e tests
           command: |
+            export SENSU_API_URL="http://127.0.0.1:31180"
             KUBECONFIG=~/.kube/config \
             OPERATOR_IMAGE=kinvolk/sensu-operator:test \
             TEST_NAMESPACE=default \
