@@ -27,7 +27,7 @@ func TestCreateCluster(t *testing.T) {
 		t.Parallel()
 	}
 	f := framework.Global
-	testSensu, err := e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", 1))
+	testSensu, err := e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", 3))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func TestCreateCluster(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 1, 6, testSensu); err != nil {
-		t.Fatalf("failed to create 1 members sensu cluster: %v", err)
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 6, testSensu); err != nil {
+		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
 	}
 }
