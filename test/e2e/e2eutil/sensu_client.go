@@ -32,7 +32,7 @@ func NewSensuClient(apiURL string) (*client.RestClient, error) {
 		},
 	}
 	sensuClient := client.New(sensuClientConfig)
-	tokens, err := sensuClient.CreateAccessToken(apiURL, "admin", "P@ssw0rd!")
+	tokens, _, err := sensuClient.CreateAccessToken(apiURL, "admin", "P@ssw0rd!")
 	if err != nil {
 		return nil, err
 	}

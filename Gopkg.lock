@@ -83,8 +83,8 @@
     "pkg/transport",
     "pkg/types"
   ]
-  revision = "121edf0467052d55876a817b89875fb39a99bf78"
-  version = "v3.2.16"
+  revision = "fca8add78a9d926166eb739b8e4a124434025ba3"
+  version = "v3.3.9"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -138,7 +138,6 @@
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
-    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
@@ -298,8 +297,8 @@
     "util/eval",
     "util/strings"
   ]
-  revision = "30607d50f966a438bcb06055ffc0f0cbc20240f4"
-  version = "2.0.0-beta.2-4"
+  revision = "2a7f0d799a2c2ef539bab7261ac229b9d9ad3cef"
+  version = "2.0.0-beta.3-1"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -407,10 +406,7 @@
 [[projects]]
   branch = "master"
   name = "google.golang.org/genproto"
-  packages = [
-    "googleapis/api/annotations",
-    "googleapis/rpc/status"
-  ]
+  packages = ["googleapis/rpc/status"]
   revision = "694d95ba50e67b2e363f3483057db5d4910c18f9"
 
 [[projects]]
@@ -639,6 +635,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d11dab32fb6596e62b82959621425927c37a670a98d0948dd5635fbe8e9d0baf"
+  inputs-digest = "ed7aed78ecea231393865c9a43a29be98f39de6591f355e41da7e7c769c90b48"
   solver-name = "gps-cdcl"
   solver-version = 1
