@@ -25,10 +25,9 @@ import (
 
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
 	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
-
-	"github.com/coreos/etcd-operator/pkg/util/etcdutil"
-	"github.com/coreos/etcd-operator/pkg/util/retryutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
 
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
@@ -412,7 +411,7 @@ func (c *Cluster) pollPods() (running, pending []*v1.Pod, err error) {
 	for i := range podList.Items {
 		pod := &podList.Items[i]
 		// Avoid polling deleted pods. k8s issue where deleted pods would sometimes show the status Pending
-		// See https://github.com/coreos/etcd-operator/issues/1693
+		// See https://github.com/kinvolk/sensu-operator/issues/1693
 		if pod.DeletionTimestamp != nil {
 			continue
 		}

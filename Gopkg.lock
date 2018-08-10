@@ -87,20 +87,6 @@
   version = "v3.2.16"
 
 [[projects]]
-  name = "github.com/coreos/etcd-operator"
-  packages = [
-    "pkg/apis/etcd/v1beta2",
-    "pkg/util/awsutil/s3factory",
-    "pkg/util/azureutil/absfactory",
-    "pkg/util/constants",
-    "pkg/util/etcdutil",
-    "pkg/util/probe",
-    "pkg/util/retryutil"
-  ]
-  revision = "a0032c1f9a708d2164f3f03109ece06c5439df80"
-  version = "v0.9.2"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "782f4967f2dc4564575ca782fe2d04090b5faca8"
@@ -653,6 +639,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9c9b090bdfb73ec7a9f4864dd5c27f80df212e4aba730e9a211eb65d2273b14"
+  inputs-digest = "d11dab32fb6596e62b82959621425927c37a670a98d0948dd5635fbe8e9d0baf"
   solver-name = "gps-cdcl"
   solver-version = 1

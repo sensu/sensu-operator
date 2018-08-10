@@ -19,8 +19,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/coreos/etcd-operator/pkg/util/constants"
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/kinvolk/sensu-operator/pkg/util/constants"
 
 	"github.com/sirupsen/logrus"
 )

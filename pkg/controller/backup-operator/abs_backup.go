@@ -19,10 +19,10 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/coreos/etcd-operator/pkg/util/azureutil/absfactory"
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/backup"
 	"github.com/kinvolk/sensu-operator/pkg/backup/writer"
+	"github.com/kinvolk/sensu-operator/pkg/util/azureutil/absfactory"
 
 	"k8s.io/client-go/kubernetes"
 )

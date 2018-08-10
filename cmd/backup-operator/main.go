@@ -21,8 +21,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/coreos/etcd-operator/pkg/util/constants"
 	controller "github.com/kinvolk/sensu-operator/pkg/controller/backup-operator"
+	"github.com/kinvolk/sensu-operator/pkg/util/constants"
 	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
 	version "github.com/kinvolk/sensu-operator/version"
 
