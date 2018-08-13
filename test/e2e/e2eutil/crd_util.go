@@ -16,11 +16,16 @@ package e2eutil
 
 import (
 	"testing"
+	"time"
 
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/aws-sdk-go/service/s3"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -39,6 +44,30 @@ func CreateCluster(t *testing.T, crClient versioned.Interface, namespace string,
 	t.Logf("creating sensu cluster: %s", res.Name)
 
 	return res, nil
+}
+
+func UpdateCluster(crClient versioned.Interface, cl *api.SensuCluster, maxRetries int, updateFunc k8sutil.SensuClusterCRUpdateFunc) (*api.SensuCluster, error) {
+	name := cl.Name
+	namespace := cl.Namespace
+	result := &api.SensuCluster{}
+	err := retryutil.Retry(1*time.Second, maxRetries, func() (done bool, err error) {
+		sensuCluster, err := crClient.SensuV1beta1().SensuClusters(namespace).Get(name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		updateFunc(sensuCluster)
+
+		result, err = crClient.SensuV1beta1().SensuClusters(namespace).Update(sensuCluster)
+		if err != nil {
+			if apierrors.IsConflict(err) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	})
+	return result, err
 }
 
 func DeleteCluster(t *testing.T, crClient versioned.Interface, kubeClient kubernetes.Interface, cl *api.SensuCluster) error {
