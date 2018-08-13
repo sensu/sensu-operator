@@ -19,7 +19,8 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/coreos/etcd-operator/pkg/util/constants"
+	"github.com/kinvolk/sensu-operator/pkg/util/constants"
+
 	"github.com/coreos/etcd/clientv3"
 )
 

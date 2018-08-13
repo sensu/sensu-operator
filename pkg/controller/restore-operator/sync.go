@@ -17,11 +17,11 @@ package controller
 import (
 	"fmt"
 
-	"github.com/coreos/etcd-operator/pkg/util/etcdutil"
-	"github.com/coreos/etcd-operator/pkg/util/retryutil"
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 	"github.com/kinvolk/sensu-operator/pkg/backup/backupapi"
+	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
 	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

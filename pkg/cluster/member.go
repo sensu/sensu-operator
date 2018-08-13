@@ -17,9 +17,9 @@ package cluster
 import (
 	"fmt"
 
+	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
 	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
 
-	"github.com/coreos/etcd-operator/pkg/util/etcdutil"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/pkg/errors"
 

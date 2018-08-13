@@ -24,9 +24,8 @@ import (
 	"time"
 
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-
-	"github.com/coreos/etcd-operator/pkg/util/etcdutil"
-	"github.com/coreos/etcd-operator/pkg/util/retryutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
 	"github.com/pborman/uuid"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -509,7 +508,7 @@ func MustNewKubeClient() kubernetes.Interface {
 
 func InClusterConfig() (*rest.Config, error) {
 	// Work around https://github.com/kubernetes/kubernetes/issues/40973
-	// See https://github.com/coreos/etcd-operator/issues/731#issuecomment-283804819
+	// See https://github.com/kinvolk/sensu-operator/issues/731#issuecomment-283804819
 	if len(os.Getenv("KUBERNETES_SERVICE_HOST")) == 0 {
 		addrs, err := net.LookupHost("kubernetes.default.svc")
 		if err != nil {

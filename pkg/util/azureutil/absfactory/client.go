@@ -17,9 +17,9 @@ package absfactory
 import (
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/storage"
-	api "github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
+	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
 
+	"github.com/Azure/azure-sdk-for-go/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )

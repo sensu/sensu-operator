@@ -24,14 +24,13 @@ import (
 
 	"github.com/kinvolk/sensu-operator/pkg/client"
 	"github.com/kinvolk/sensu-operator/pkg/controller"
+	"github.com/kinvolk/sensu-operator/pkg/util/constants"
+	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	"github.com/kinvolk/sensu-operator/pkg/util/probe"
+	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
 	"github.com/kinvolk/sensu-operator/version"
 
-	"github.com/coreos/etcd-operator/pkg/util/constants"
-	"github.com/coreos/etcd-operator/pkg/util/probe"
-	"github.com/coreos/etcd-operator/pkg/util/retryutil"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -20,8 +20,7 @@ import (
 	"time"
 
 	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-
-	"github.com/coreos/etcd-operator/pkg/util/constants"
+	"github.com/kinvolk/sensu-operator/pkg/util/constants"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
