@@ -60,7 +60,7 @@ jobs:
             use_https = False
             EOF
             kubectl create secret generic sensu-backups-aws-secret --from-file s3creds/credentials --from-file s3creds/config
-            kubectl apply -f .circleci/minio-deployment.yml
+            kubectl apply -f test/manifests/minio-deployment.yml
             until kubectl rollout status deploy minio-deployment; do sleep 1; done
             until nc -z $(minikube ip) 31234; do sleep 1; done
             until mc config host add minio http://$(minikube ip):31234 admin password; do sleep 1; done
