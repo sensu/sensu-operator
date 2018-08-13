@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+readonly config_dir="$(mktemp -d "/tmp/sensu-operator-s3creds-XXXXXX")"
+trap 'rm -rf "${config_dir}"' EXIT
+
+kubectl apply -f test/manifests/minio-deployment.yml
+
+mkdir -p /tmp/s3creds
+
+cat <<EOF >"${config_dir}/credentials"
+[default]
+aws_access_key_id = admin
+aws_secret_access_key = password
+EOF
+
+cat <<EOF >"${config_dir}/config"
+[default]
+region = eu-central-1
+EOF
+
+kubectl create secret generic sensu-backups-aws-secret \
+  --from-file "${config_dir}/credentials" \
+  --from-file "${config_dir}/config"
