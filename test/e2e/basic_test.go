@@ -44,7 +44,7 @@ func TestCreateCluster(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 6, sensuCluster); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster); err != nil {
 		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
 	}
 
