@@ -30,6 +30,7 @@ import (
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -344,6 +345,130 @@ func addRecoveryToPod(pod *v1.Pod, token string, m *etcdutil.Member, cs api.Clus
 
 func addOwnerRefToObject(o metav1.Object, r metav1.OwnerReference) {
 	o.SetOwnerReferences(append(o.GetOwnerReferences(), r))
+}
+
+// CreateNetPolicy creates a NetworkPolicy for a Sensu cluster
+func CreateNetPolicy(kubecli kubernetes.Interface, clusterName, namespace string, owner metav1.OwnerReference) error {
+	labels := map[string]string{
+		"app":           "sensu",
+		"sensu_cluster": clusterName,
+	}
+
+	netCases := []networkingv1.NetworkPolicy{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "sensu-block-all-",
+				Labels:       labels,
+				Namespace:    metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "sensu-api-pods-",
+				Labels:       labels,
+				Namespace:    metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 3000},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 8080},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 8081},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "sensu-operator-pods-",
+				Labels:       labels,
+				Namespace:    metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2379},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2380},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"name": "sensu-operator",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				GenerateName: "sensu-cluster-pods-",
+				Labels:       labels,
+				Namespace:    metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2379},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2380},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: labels,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, net := range netCases {
+		addOwnerRefToObject(net.GetObjectMeta(), owner)
+		if _, err := kubecli.NetworkingV1().NetworkPolicies(namespace).Create(&net); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // NewSeedMemberPod returns a Pod manifest for a seed member.
