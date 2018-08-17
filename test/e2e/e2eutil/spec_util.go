@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
@@ -56,8 +55,10 @@ func NewAPINodePortService(clusterName, serviceName string) *v1.Service {
 				TargetPort: intstr.FromInt(8080),
 				NodePort:   31180,
 			}},
-			Type:     v1.ServiceTypeNodePort,
-			Selector: k8sutil.LabelsForCluster(clusterName),
+			Type: v1.ServiceTypeNodePort,
+			Selector: map[string]string{
+				"app": "sensu",
+			},
 		},
 	}
 }
@@ -125,6 +126,32 @@ func NewSensuBackup(clusterName, backupName string) *api.SensuBackup {
 			EtcdEndpoints: []string{fmt.Sprintf("%s.default.svc.cluster.local:2379", clusterName)},
 			StorageType:   storageType,
 			BackupSource:  backupSource,
+		},
+	}
+}
+
+func NewSensuRestore(clusterName, backupName string) *api.SensuRestore {
+	storageType := api.BackupStorageTypeS3
+	s3RestoreSource := &api.S3RestoreSource{
+		Path:           fmt.Sprintf("sensu-backup-test/%s", backupName),
+		AWSSecret:      "sensu-backups-aws-secret",
+		Endpoint:       "minio-service.default.svc.cluster.local:9000",
+		ForcePathStyle: true,
+		DisableSSL:     true,
+	}
+	restoreSource := api.RestoreSource{
+		S3: s3RestoreSource,
+	}
+	return &api.SensuRestore{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterName,
+		},
+		Spec: api.RestoreSpec{
+			BackupStorageType: storageType,
+			RestoreSource:     restoreSource,
+			SensuCluster: api.SensuClusterRef{
+				Name: clusterName,
+			},
 		},
 	}
 }

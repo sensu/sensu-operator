@@ -69,7 +69,7 @@ func TestCreateCluster(t *testing.T) {
 	}
 	defer func() {
 		if err := e2eutil.DeleteDummyDeployment(f.KubeClient, "default", dummyDeployment.ObjectMeta.Name); err != nil {
-			t.Fatal(err)
+			t.Logf("failed to delete dummy deployment: %v", err)
 		}
 	}()
 
@@ -150,5 +150,106 @@ func TestCreateCluster(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("failed to stat backup in 10 seconds: %v", err)
+	}
+
+	// Delete the old cluster and agents to start a new, empty
+	// cluster afterwards where we apply the backup.
+
+	if err := e2eutil.DeleteDummyDeployment(f.KubeClient, "default", dummyDeployment.ObjectMeta.Name); err != nil {
+		t.Fatalf("failed to delete dummy deployment: %v", err)
+	}
+	if err := e2eutil.DeleteCluster(t, f.CRClient, f.KubeClient, sensuCluster); err != nil {
+		t.Fatalf("failed to delete sensu cluster in preperation for restore: %v", err)
+	}
+
+	sensuCluster, err = e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", 3))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sensuClusterPods, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster)
+	if err != nil {
+		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+	}
+
+	sensuClusterName = sensuCluster.ObjectMeta.Name
+
+	// Renew the client for the new cluster
+	sensuClient, err = e2eutil.NewSensuClient(apiURL)
+	if err != nil {
+		t.Fatalf("failed to initialize sensu client: %v", err)
+	}
+
+	entities, err = sensuClient.ListEntities("default")
+	if err != nil {
+		t.Fatalf("failed to list entities: %v", err)
+	}
+	// There should be no entities: it's a new cluster and no
+	// agents are connected
+	if len(entities) != 0 {
+		t.Fatalf("expected to find zero entities but found %d", len(entities))
+	}
+
+	// Now apply the backup ...
+
+	t.Log("Restoring cluster from backup")
+
+	sensuRestore := e2eutil.NewSensuRestore(sensuClusterName, "sensu-test-backup")
+	_, err = f.CRClient.SensuV1beta1().SensuRestores("default").Create(sensuRestore)
+	if err != nil {
+		t.Fatalf("failed to create sensu restore: %v", err)
+	}
+	defer func() {
+		if err := f.CRClient.SensuV1beta1().SensuRestores("default").Delete(sensuRestore.ObjectMeta.Name, nil); err != nil {
+			t.Fatalf("failed to delete test backup: %v", err)
+		}
+	}()
+
+	// Restoring a backup means a new pods are started, i.e. we
+	// have to wait until the old members are gone and the new are up
+	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 3, sensuCluster, sensuClusterPods...)
+	if err != nil {
+		t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
+	}
+
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster); err != nil {
+		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+	}
+
+	// Renew the client for the new cluster
+	sensuClient, err = e2eutil.NewSensuClient(apiURL)
+	if err != nil {
+		t.Fatalf("failed to initialize sensu client: %v", err)
+	}
+
+	clusterMemberList, err = sensuClient.MemberList()
+	if err != nil {
+		t.Fatalf("failed to get cluster member list: %v", err)
+	}
+	clusterMembers = clusterMemberList.Members
+	if len(clusterMembers) != 3 {
+		t.Fatalf("expected to find three cluster members but found %d", len(clusterMembers))
+	}
+
+	clusterHealth, err = sensuClient.Health()
+	if err != nil {
+		t.Fatalf("failed to get cluster health: %v", err)
+	}
+	for _, memberHealth := range clusterHealth {
+		if !memberHealth.Healthy {
+			t.Fatalf("not all cluster members are healthy: %+v", clusterHealth)
+		}
+	}
+
+	// ... and check the list of entities again. Since two entities
+	// were registered at the time we took the backup, we should
+	// find two
+
+	entities, err = sensuClient.ListEntities("default")
+	if err != nil {
+		t.Fatalf("failed to list entities: %v", err)
+	}
+	if len(entities) != 2 {
+		t.Fatalf("expected to find two entities after restore but found %d", len(entities))
 	}
 }
