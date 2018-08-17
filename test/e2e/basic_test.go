@@ -33,7 +33,9 @@ func TestCreateCluster(t *testing.T) {
 		t.Parallel()
 	}
 	f := framework.Global
-	sensuCluster, err := e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", 3))
+
+	clusterSize := 3
+	sensuCluster, err := e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", clusterSize))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,8 +46,8 @@ func TestCreateCluster(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster); err != nil {
-		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster); err != nil {
+		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
 
 	sensuClusterName := sensuCluster.ObjectMeta.Name
@@ -96,7 +98,7 @@ func TestCreateCluster(t *testing.T) {
 		t.Fatalf("failed to get cluster member list: %v", err)
 	}
 	clusterMembers := clusterMemberList.Members
-	if len(clusterMembers) != 3 {
+	if len(clusterMembers) != clusterSize {
 		t.Fatalf("expected to find three cluster members but found %d", len(clusterMembers))
 	}
 
@@ -162,14 +164,14 @@ func TestCreateCluster(t *testing.T) {
 		t.Fatalf("failed to delete sensu cluster in preperation for restore: %v", err)
 	}
 
-	sensuCluster, err = e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", 3))
+	sensuCluster, err = e2eutil.CreateCluster(t, f.CRClient, f.Namespace, e2eutil.NewCluster("test-sensu-", clusterSize))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	sensuClusterPods, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster)
+	sensuClusterPods, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster)
 	if err != nil {
-		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
 
 	sensuClusterName = sensuCluster.ObjectMeta.Name
@@ -207,13 +209,13 @@ func TestCreateCluster(t *testing.T) {
 
 	// Restoring a backup means a new pods are started, i.e. we
 	// have to wait until the old members are gone and the new are up
-	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 3, sensuCluster, sensuClusterPods...)
+	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 6, sensuCluster, sensuClusterPods...)
 	if err != nil {
 		t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
 	}
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, sensuCluster); err != nil {
-		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster); err != nil {
+		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
 
 	// Renew the client for the new cluster
@@ -227,7 +229,7 @@ func TestCreateCluster(t *testing.T) {
 		t.Fatalf("failed to get cluster member list: %v", err)
 	}
 	clusterMembers = clusterMemberList.Members
-	if len(clusterMembers) != 3 {
+	if len(clusterMembers) != clusterSize {
 		t.Fatalf("expected to find three cluster members but found %d", len(clusterMembers))
 	}
 
