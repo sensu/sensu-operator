@@ -32,8 +32,10 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -112,6 +114,10 @@ func New(config Config, cl *api.SensuCluster) *Cluster {
 		}
 		c.run()
 	}()
+
+	if err := c.createNetPolicy(); err != nil {
+		c.logger.Warningf("network policy failed: %v", err)
+	}
 
 	return c
 }
@@ -388,6 +394,132 @@ func (c *Cluster) createPod(members etcdutil.MemberSet, m *etcdutil.Member, stat
 	}
 	_, err := c.config.KubeCli.CoreV1().Pods(c.cluster.Namespace).Create(pod)
 	return err
+}
+
+// create NetworkPolicy for the Sensu pods
+func (c *Cluster) createNetPolicy() error {
+	netCases := []networkingv1.NetworkPolicy{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sensu-block-all",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "sensu",
+					},
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sensu-api-pods",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "sensu",
+					},
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 3000},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 8080},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 8081},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sensu-operator-pods",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "sensu",
+					},
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2379},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2380},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"name": "sensu-operator",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sensu-cluster-pods",
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "sensu",
+					},
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2379},
+							},
+							{
+								Port: &intstr.IntOrString{Type: intstr.Int, IntVal: 2380},
+							},
+						},
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"app": "sensu",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	c.logger.Infof("Creating NetworkPolicy...")
+	for _, net := range netCases {
+		_, err := c.config.KubeCli.NetworkingV1().NetworkPolicies(c.cluster.Namespace).Create(&net)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Cluster) removePod(name string) error {
