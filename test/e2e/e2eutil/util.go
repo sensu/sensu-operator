@@ -58,6 +58,30 @@ func DeleteDummyDeployment(kubecli kubernetes.Interface, nameSpace, name string)
 	return kubecli.AppsV1beta1().Deployments(nameSpace).Delete(name, deleteOptions)
 }
 
+func DeleteDummyPod(kubecli kubernetes.Interface, nameSpace, name string) error {
+	gracePeriod := int64(0)
+	deletePolicy := metav1.DeletePropagationBackground
+	deleteOptions := &metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+		PropagationPolicy:  &deletePolicy,
+	}
+	return kubecli.CoreV1().Pods(nameSpace).Delete(name, deleteOptions)
+}
+
+func DeleteNetworkPolicy(kubecli kubernetes.Interface, nameSpace string) error {
+	policies, err := kubecli.NetworkingV1().NetworkPolicies(nameSpace).List(metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list networkpolicies: %v", err)
+	}
+
+	for _, list := range policies.Items {
+		if err = kubecli.NetworkingV1().NetworkPolicies(nameSpace).Delete(list.Name, nil); err != nil {
+			return fmt.Errorf("failed to delete policy %v: %v", list.Name, err)
+		}
+	}
+	return nil
+}
+
 func LogfWithTimestamp(t *testing.T, format string, args ...interface{}) {
 	t.Log(time.Now(), fmt.Sprintf(format, args...))
 }
