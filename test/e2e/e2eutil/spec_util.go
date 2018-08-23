@@ -62,6 +62,31 @@ func NewAPINodePortService(clusterName, serviceName string) *v1.Service {
 	}
 }
 
+func NewEtcdService(clusterName, serviceName string) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: serviceName,
+			Labels: map[string]string{
+				"app": "sensu",
+			},
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "client",
+				Port:       2379,
+				TargetPort: intstr.FromInt(2379),
+				Protocol:   v1.ProtocolTCP,
+			}, {
+				Name:       "peer",
+				Port:       2380,
+				TargetPort: intstr.FromInt(2380),
+				Protocol:   v1.ProtocolTCP,
+			}},
+			Selector: k8sutil.LabelsForCluster(clusterName),
+		},
+	}
+}
+
 func NewDummyDeployment(clusterName string) *appsv1beta1.Deployment {
 	replicas := int32(2)
 	return &appsv1beta1.Deployment{
@@ -98,6 +123,32 @@ func NewDummyDeployment(clusterName string) *appsv1beta1.Deployment {
 							Image:   "busybox",
 							Command: []string{"/bin/sleep", "10000"},
 						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewClientPod(service *v1.Service, ns string) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-network-client-pod",
+			Labels: map[string]string{
+				"name": "test",
+			},
+		},
+		Spec: v1.PodSpec{
+			RestartPolicy: v1.RestartPolicyNever,
+			Containers: []v1.Container{
+				{
+					Name:  "wget-spider",
+					Image: "busybox",
+					Args: []string{
+						"/bin/sh",
+						"-c",
+						fmt.Sprintf("for i in $(seq 1 5); do wget --spider -T 8 %s.%s:2379; sleep 5; done;",
+							service.Name, ns),
 					},
 				},
 			},
