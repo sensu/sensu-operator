@@ -20,7 +20,7 @@ import (
 	"os"
 	"path"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"

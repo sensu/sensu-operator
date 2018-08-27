@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/kinvolk/sensu-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/kinvolk/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	sensu "github.com/kinvolk/sensu-operator/pkg/generated/informers/externalversions/sensu"
+	versioned "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/sensu/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	sensu "github.com/sensu/sensu-operator/pkg/generated/informers/externalversions/sensu"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

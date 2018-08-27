@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
 
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"

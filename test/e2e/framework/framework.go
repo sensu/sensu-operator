@@ -21,12 +21,12 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/kinvolk/sensu-operator/pkg/client"
-	"github.com/kinvolk/sensu-operator/pkg/generated/clientset/versioned"
-	"github.com/kinvolk/sensu-operator/pkg/util/constants"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
-	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
-	"github.com/kinvolk/sensu-operator/test/e2e/e2eutil"
+	"github.com/sensu/sensu-operator/pkg/client"
+	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/sensu/sensu-operator/pkg/util/constants"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	"github.com/sensu/sensu-operator/pkg/util/retryutil"
+	"github.com/sensu/sensu-operator/test/e2e/e2eutil"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"

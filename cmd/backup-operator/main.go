@@ -21,10 +21,10 @@ import (
 	"runtime"
 	"time"
 
-	controller "github.com/kinvolk/sensu-operator/pkg/controller/backup-operator"
-	"github.com/kinvolk/sensu-operator/pkg/util/constants"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
-	version "github.com/kinvolk/sensu-operator/version"
+	controller "github.com/sensu/sensu-operator/pkg/controller/backup-operator"
+	"github.com/sensu/sensu-operator/pkg/util/constants"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	version "github.com/sensu/sensu-operator/version"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"

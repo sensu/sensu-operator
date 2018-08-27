@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
-	"github.com/kinvolk/sensu-operator/pkg/util/probe"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	"github.com/sensu/sensu-operator/pkg/util/probe"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"

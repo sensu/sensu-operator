@@ -19,8 +19,8 @@ limitations under the License.
 package sensu
 
 import (
-	internalinterfaces "github.com/kinvolk/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1beta1 "github.com/kinvolk/sensu-operator/pkg/generated/informers/externalversions/sensu/v1beta1"
+	internalinterfaces "github.com/sensu/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1beta1 "github.com/sensu/sensu-operator/pkg/generated/informers/externalversions/sensu/v1beta1"
 )
 
 // Interface provides access to each of this group's versions.

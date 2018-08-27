@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
-	"github.com/kinvolk/sensu-operator/test/e2e/e2eutil"
-	"github.com/kinvolk/sensu-operator/test/e2e/framework"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	"github.com/sensu/sensu-operator/test/e2e/e2eutil"
+	"github.com/sensu/sensu-operator/test/e2e/framework"
 )
 
 func TestCreateCluster(t *testing.T) {

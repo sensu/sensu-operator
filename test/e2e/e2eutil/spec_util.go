@@ -17,8 +17,8 @@ package e2eutil
 import (
 	"fmt"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
