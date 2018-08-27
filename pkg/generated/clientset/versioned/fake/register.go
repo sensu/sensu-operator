@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	sensuv1beta1 "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
+	sensuv1beta1 "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

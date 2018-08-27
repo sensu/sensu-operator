@@ -20,11 +20,11 @@ import (
 	"io"
 	"net/http"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/kinvolk/sensu-operator/pkg/backup/backupapi"
-	"github.com/kinvolk/sensu-operator/pkg/backup/reader"
-	"github.com/kinvolk/sensu-operator/pkg/util/awsutil/s3factory"
-	"github.com/kinvolk/sensu-operator/pkg/util/azureutil/absfactory"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/sensu/sensu-operator/pkg/backup/backupapi"
+	"github.com/sensu/sensu-operator/pkg/backup/reader"
+	"github.com/sensu/sensu-operator/pkg/util/awsutil/s3factory"
+	"github.com/sensu/sensu-operator/pkg/util/azureutil/absfactory"
 
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

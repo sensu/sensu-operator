@@ -17,7 +17,7 @@ package k8sutil
 import (
 	"encoding/json"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

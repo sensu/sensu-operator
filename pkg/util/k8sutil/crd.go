@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/kinvolk/sensu-operator/pkg/util/retryutil"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/sensu/sensu-operator/pkg/util/retryutil"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

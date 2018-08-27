@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     machine: true
-    working_directory: ~/.go_workspace/src/github.com/kinvolk/sensu-operator
+    working_directory: ~/.go_workspace/src/github.com/sensu/sensu-operator
     steps:
       - checkout
       - run:

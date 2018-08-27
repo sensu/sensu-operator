@@ -19,7 +19,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/kinvolk/sensu-operator/pkg/util/constants"
+	"github.com/sensu/sensu-operator/pkg/util/constants"
 
 	"github.com/coreos/etcd/clientv3"
 )

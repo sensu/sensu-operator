@@ -15,7 +15,7 @@
 package k8sutil
 
 import (
-	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
+	"github.com/sensu/sensu-operator/pkg/util/etcdutil"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

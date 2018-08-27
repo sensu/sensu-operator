@@ -18,8 +18,8 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/kinvolk/sensu-operator/pkg/util/etcdutil"
-	"github.com/kinvolk/sensu-operator/pkg/util/k8sutil"
+	"github.com/sensu/sensu-operator/pkg/util/etcdutil"
+	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
 
 	"k8s.io/client-go/kubernetes"
 )

@@ -19,8 +19,8 @@ import (
 	"errors"
 	"time"
 
-	api "github.com/kinvolk/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/kinvolk/sensu-operator/pkg/util/constants"
+	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/sensu/sensu-operator/pkg/util/constants"
 
 	"github.com/sirupsen/logrus"
 )
