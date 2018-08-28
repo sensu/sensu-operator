@@ -275,3 +275,36 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 	}
 	return nil
 }
+
+func WaitUntilPodSuccess(kubecli kubernetes.Interface, pod *v1.Pod, namespace string, timeout time.Duration) error {
+	if pod.Spec.RestartPolicy == v1.RestartPolicyAlways {
+		return fmt.Errorf("pod %q will never terminate with a succeeded state since its restart policy is Always", pod.Name)
+	}
+
+	interval := 5 * time.Second
+	var retPod *v1.Pod
+	var err error
+	err = retryutil.Retry(interval, int(timeout/(interval)), func() (bool, error) {
+		retPod, err = kubecli.CoreV1().Pods(namespace).Get(pod.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		switch retPod.Status.Phase {
+		case v1.PodSucceeded:
+			return true, nil
+		case v1.PodFailed:
+			return true, fmt.Errorf("pod %q failed with status: %+v", pod.Name, pod.Status)
+		default:
+			return false, nil
+		}
+	})
+
+	if err != nil {
+		if retryutil.IsRetryFailure(err) {
+			return fmt.Errorf("failed to wait pod success, it is still pending: %v", err)
+		}
+		return fmt.Errorf("failed to wait pod success: %v", err)
+	}
+
+	return nil
+}
