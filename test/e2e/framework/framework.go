@@ -55,7 +55,7 @@ type Framework struct {
 // Setup setups a test framework and points "Global" to it.
 func setup() error {
 	kubeconfig := flag.String("kubeconfig", "", "kube config path, e.g. $HOME/.kube/config")
-	opImage := flag.String("operator-image", "", "operator image, e.g. kinvolk/sensu-operator:v0.0.1")
+	opImage := flag.String("operator-image", "", "operator image, e.g. sensu/sensu-operator:v0.0.1")
 	ns := flag.String("namespace", "default", "e2e test namespace")
 	flag.Parse()
 

@@ -5,7 +5,7 @@ if ! which docker > /dev/null; then
 	exit 1
 fi
 
-: ${IMAGE:?"Need to set IMAGE, e.g. kinvolk/sensu-operator"}
+: ${IMAGE:?"Need to set IMAGE, e.g. sensu/sensu-operator"}
 
 echo "building container..."
 docker build --tag "${IMAGE}" -f hack/build/Dockerfile . 1>/dev/null

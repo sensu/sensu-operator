@@ -1,4 +1,4 @@
-IMAGE?=kinvolk/sensu-operator:v0.0.1
+IMAGE?=sensu/sensu-operator:v0.0.1
 
 .PHONY: all
 all: build container

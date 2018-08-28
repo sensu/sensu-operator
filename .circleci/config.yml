@@ -16,7 +16,7 @@ jobs:
             curl -Lo minikube https://github.com/kubernetes/minikube/releases/download/${MINIKUBE_VERSION}/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
             curl -Lo mc https://dl.minio.io/client/mc/release/linux-amd64/mc && chmod +x mc && sudo mv mc /usr/local/bin/
             sudo minikube config set WantReportErrorPrompt false
-            # Install Go 1.10 to avoid error from `go test`: `can't load package: package github.com/kinvolk/sensu-operator: no Go files in ...`
+            # Install Go 1.10 to avoid error from `go test`: `can't load package: package github.com/sensu/sensu-operator: no Go files in ...`
             curl -Lo go.tgz https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go/*
             sudo tar -C /usr/local/ -xf go.tgz
@@ -35,7 +35,7 @@ jobs:
           name: Build operator
           command: |
             make build
-            make container IMAGE=kinvolk/sensu-operator:test
+            make container IMAGE=sensu/sensu-operator:test
       - run:
           name: Setup RBAC for kube-dns
           command: |
@@ -70,7 +70,7 @@ jobs:
           command: |
             export SENSU_API_URL="http://127.0.0.1:31180"
             KUBECONFIG=~/.kube/config \
-            OPERATOR_IMAGE=kinvolk/sensu-operator:test \
+            OPERATOR_IMAGE=sensu/sensu-operator:test \
             TEST_NAMESPACE=default \
             TEST_AWS_SECRET=sensu-backups-aws-secret \
             TEST_S3_BUCKET=sensu-backup-test \
