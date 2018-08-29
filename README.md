@@ -1,6 +1,6 @@
 # Sensu operator
 
-[![CircleCI](https://circleci.com/gh/kinvolk/sensu-operator.svg?style=svg)](https://circleci.com/gh/kinvolk/sensu-operator)
+[![CircleCI](https://circleci.com/gh/sensu/sensu-operator.svg?style=svg)](https://circleci.com/gh/sensu/sensu-operator)
 
 Status: Proof of concept
 
@@ -108,7 +108,7 @@ have to build your own.
 
 Fetch and checkout this branch:
 
-https://github.com/kinvolk/sensu-go/tree/schu/dockerfile-add-etcdctl
+https://github.com/sensu/sensu-go/tree/schu/dockerfile-add-etcdctl
 
 Then run
 
@@ -216,7 +216,7 @@ $ eval $(minikube docker-env)
 $ make
 $ ./example/rbac/create-role
 $ KUBECONFIG=~/.kube/config \
-  OPERATOR_IMAGE=kinvolk/sensu-operator:v0.0.1 \
+  OPERATOR_IMAGE=sensu/sensu-operator:v0.0.1 \
   TEST_NAMESPACE=default \
   TEST_AWS_SECRET=sensu-backups-aws-secret \
   TEST_S3_BUCKET=sensu-backup-test \

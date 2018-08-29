@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: sensu-backup-operator
-        image: kinvolk/sensu-operator:v0.0.1
+        image: sensu/sensu-operator:v0.0.1
         command:
         - sensu-backup-operator
         env:
