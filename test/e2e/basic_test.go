@@ -209,7 +209,7 @@ func TestCreateCluster(t *testing.T) {
 
 	// Restoring a backup means a new pods are started, i.e. we
 	// have to wait until the old members are gone and the new are up
-	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 6, sensuCluster, sensuClusterPods...)
+	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 12, sensuCluster, sensuClusterPods...)
 	if err != nil {
 		t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
 	}
