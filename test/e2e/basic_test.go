@@ -46,7 +46,7 @@ func TestCreateCluster(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 20, sensuCluster); err != nil {
 		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
 
@@ -169,7 +169,7 @@ func TestCreateCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sensuClusterPods, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster)
+	sensuClusterPods, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 20, sensuCluster)
 	if err != nil {
 		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
@@ -214,7 +214,7 @@ func TestCreateCluster(t *testing.T) {
 		t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
 	}
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 10, sensuCluster); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 20, sensuCluster); err != nil {
 		t.Fatalf("failed to create %d members sensu cluster: %v", clusterSize, err)
 	}
 
