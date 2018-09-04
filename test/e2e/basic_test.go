@@ -26,6 +26,7 @@ import (
 	"github.com/sensu/sensu-operator/test/e2e/framework"
 
 	"github.com/minio/minio-go"
+	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 func TestCreateCluster(t *testing.T) {
@@ -211,7 +212,12 @@ func TestCreateCluster(t *testing.T) {
 	// have to wait until the old members are gone and the new are up
 	remainingPods, err := e2eutil.WaitUntilMembersWithNamesDeleted(t, f.CRClient, 12, sensuCluster, sensuClusterPods...)
 	if err != nil {
-		t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
+		statusError, ok := err.(*errors.StatusError)
+		// If the cluster is not found (404), its members are
+		// deleted already and we can continue
+		if !ok || statusError.ErrStatus.Code != 404 {
+			t.Fatalf("failed to see members (%v) be deleted in time: %v", remainingPods, err)
+		}
 	}
 
 	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, clusterSize, 20, sensuCluster); err != nil {
