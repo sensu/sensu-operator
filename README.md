@@ -99,25 +99,6 @@ Minikube instance and could be different on your system, see
 
 ## Backup & restore
 
-**Please note**: backup & restore is experimental and currently relies on
-`etcdctl` being availabe in the `sensu/sensu` image. For that you
-have to build your own.
-
-
-#### Build sensu container with etcdctl
-
-Fetch and checkout this branch:
-
-https://github.com/sensu/sensu-go/tree/schu/dockerfile-add-etcdctl
-
-Then run
-
-```
-eval $(minikube docker-env)
-./build.sh build
-./build.sh docker
-```
-
 ### Setup
 
 Sensu backup and restore operators can be set up to backup and
