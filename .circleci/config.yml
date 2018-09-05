@@ -23,7 +23,19 @@ jobs:
             # Avoid an error `linux mounts: path /etc/kubernetes is mounted on / but it is not a shared or slave mount`
             sudo mount --make-shared /
             # TODO: remove the --bootstrapper flag once this issue is solved: https://github.com/kubernetes/minikube/issues/2704
-            sudo -E minikube start --vm-driver=none --bootstrapper=localkube --kubernetes-version=${K8S_VERSION} --extra-config=apiserver.Authorization.Mode=RBAC
+            sudo -E minikube start --vm-driver=none --bootstrapper=localkube --memory=3072 --kubernetes-version=${K8S_VERSION} --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=kubelet.PodCIDR=192.168.0.0/16 --extra-config=controller-manager.cluster-cidr=192.168.0.0/16 --extra-config=controller-manager.allocate-node-cidrs=true --network-plugin=cni --extra-config=kubelet.network-plugin=cni
+      - run:
+          name: Make /run shared mount
+          command: |
+            # Otherwise calico-node will fail to start with:
+            # Error: failed to start container "calico-node": ... path /var/run/calico is mounted on /run but it is not a shared or slave mount
+            sudo mount --make-shared /run
+      - run:
+          name: Install calico plugin
+          command: |
+            # Install calico according to the instruction here: https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/calico
+            kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/rbac.yaml
+            kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/calico.yaml
       - run:
           name: Wait for kubernetes to be ready
           command: |
