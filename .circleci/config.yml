@@ -47,20 +47,7 @@ jobs:
       - run:
           name: Setup S3 environment
           command: |
-            mkdir -p s3creds
-            cat <<EOF >s3creds/credentials
-            [default]
-            aws_access_key_id = admin
-            aws_secret_access_key = password
-            EOF
-            cat <<EOF >s3creds/config
-            [default]
-            region = eu-central-1
-            host_base = minio-service.default.svc.cluster.local:9000
-            use_https = False
-            EOF
-            kubectl create secret generic sensu-backups-aws-secret --from-file s3creds/credentials --from-file s3creds/config
-            kubectl apply -f .circleci/minio-deployment.yml
+            ./test/deploy-minio
             until kubectl rollout status deploy minio-deployment; do sleep 1; done
             until nc -z $(minikube ip) 31234; do sleep 1; done
             until mc config host add minio http://$(minikube ip):31234 admin password; do sleep 1; done
