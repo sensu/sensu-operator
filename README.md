@@ -196,6 +196,7 @@ $ minikube start --kubernetes-version v1.10.0
 $ eval $(minikube docker-env)
 $ make
 $ ./example/rbac/create-role
+$ ./test/deploy-minio
 $ KUBECONFIG=~/.kube/config \
   OPERATOR_IMAGE=sensu/sensu-operator:v0.0.1 \
   TEST_NAMESPACE=default \

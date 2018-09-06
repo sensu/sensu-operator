@@ -39,7 +39,7 @@ func TestResizeCluster3to5(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, testSensu); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 20, testSensu); err != nil {
 		t.Fatalf("failed to create 3 members sensu cluster: %v", err)
 	}
 
@@ -50,7 +50,7 @@ func TestResizeCluster3to5(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 5, 10, testSensu); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 5, 20, testSensu); err != nil {
 		t.Fatalf("failed to resize to 5 members etcd cluster: %v", err)
 	}
 }
@@ -71,7 +71,7 @@ func TestResizeCluster5to3(t *testing.T) {
 		}
 	}()
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 5, 10, testSensu); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 5, 20, testSensu); err != nil {
 		t.Fatalf("failed to create 5 members sensu cluster: %v", err)
 	}
 
@@ -82,7 +82,7 @@ func TestResizeCluster5to3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 10, testSensu); err != nil {
+	if _, err := e2eutil.WaitUntilSizeReached(t, f.CRClient, 3, 20, testSensu); err != nil {
 		t.Fatalf("failed to resize to 3 members etcd cluster: %v", err)
 	}
 }
