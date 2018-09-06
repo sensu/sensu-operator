@@ -37,6 +37,7 @@ var retryInterval = 10 * time.Second
 
 type acceptFunc func(*api.SensuCluster) bool
 type filterFunc func(*v1.Pod) bool
+type podCondition func(pod *v1.Pod) (bool, error)
 
 func CalculateRestoreWaitTime(needDataClone bool) int {
 	waitTime := 24
@@ -274,4 +275,36 @@ func WaitUntilOperatorReady(kubecli kubernetes.Interface, namespace, name string
 		return fmt.Errorf("failed to wait for pod (%v) to become ready: %v", podName, err)
 	}
 	return nil
+}
+
+func WaitForPodCondition(t *testing.T, kubecli kubernetes.Interface, ns string, podName string, timeout time.Duration, condition podCondition) error {
+	for start := time.Now(); time.Since(start) < timeout; time.Sleep(10 * time.Second) {
+		pod, err := kubecli.CoreV1().Pods(ns).Get(podName, metav1.GetOptions{})
+		if err != nil {
+			LogfWithTimestamp(t, "Pod %q not found: %v", podName, err)
+		}
+		if done, err := condition(pod); done {
+			if err == nil {
+				LogfWithTimestamp(t, "Pod %q satisfied condition", podName)
+			}
+			return err
+		}
+	}
+	return fmt.Errorf("failed to wait for pod %q to achieve desired condition", podName)
+}
+
+func WaitUntilPodSuccess(t *testing.T, kubecli kubernetes.Interface, pod *v1.Pod, namespace string, timeout time.Duration) error {
+	return WaitForPodCondition(t, kubecli, namespace, pod.Name, timeout, func(pod *v1.Pod) (bool, error) {
+		if pod.Spec.RestartPolicy == v1.RestartPolicyAlways {
+			return true, fmt.Errorf("pod %q will never terminate with a succeeded state since its restart policy is Always", pod.Name)
+		}
+		switch pod.Status.Phase {
+		case v1.PodSucceeded:
+			return true, nil
+		case v1.PodFailed:
+			return true, fmt.Errorf("pod %q failed with status: %+v", pod.Name, pod.Status)
+		default:
+			return false, nil
+		}
+	})
 }

@@ -9,7 +9,7 @@ jobs:
           name: Setup host
           environment:
             K8S_VERSION: v1.10.0
-            MINIKUBE_VERSION: v0.28.0
+            MINIKUBE_VERSION: v0.28.2
             CHANGE_MINIKUBE_NONE_USER: true
           command: |
             curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
@@ -23,7 +23,7 @@ jobs:
             # Avoid an error `linux mounts: path /etc/kubernetes is mounted on / but it is not a shared or slave mount`
             sudo mount --make-shared /
             # TODO: remove the --bootstrapper flag once this issue is solved: https://github.com/kubernetes/minikube/issues/2704
-            sudo -E minikube start --vm-driver=none --bootstrapper=localkube --kubernetes-version=${K8S_VERSION} --extra-config=apiserver.Authorization.Mode=RBAC
+            sudo -E minikube start --vm-driver=none --memory=3072 --kubernetes-version=${K8S_VERSION} --extra-config=apiserver.Authorization.Mode=RBAC --extra-config=controller-manager.cluster-cidr=192.168.0.0/16 --extra-config=controller-manager.allocate-node-cidrs=true --network-plugin=cni --extra-config=kubelet.network-plugin=cni
       - run:
           name: Wait for kubernetes to be ready
           command: |
@@ -31,6 +31,11 @@ jobs:
             until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
               sleep 1
             done
+      - run:
+          name: Install calico plugin
+          command: |
+            kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+            kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
       - run:
           name: Build operator
           command: |
