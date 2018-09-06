@@ -25,7 +25,7 @@ import (
 const (
 	defaultRepository = "sensu/sensu"
 	// TODO: probably should default to a stable version eventually
-	DefaultSensuVersion = "master"
+	DefaultSensuVersion = "2.0.0-beta.4.1"
 )
 
 var (
