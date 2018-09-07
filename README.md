@@ -10,10 +10,19 @@ It is based on and heavily inspired by the [etcd-operator](https://github.com/co
 
 ## Setup
 
-Tested with a Kubernetes v1.10 Minikube setup:
+Start Minikube with CNI plugins enabled and install Calico for network policies to take effect:
 
 ```
-$ minikube start --kubernetes-version v1.10.0
+$ minikube start --memory=3072 --kubernetes-version v1.10.0 --extra-config=controller-manager.cluster-cidr=192.168.0.0/16 --extra-config=controller-manager.allocate-node-cidrs=true --network-plugin=cni --extra-config=kubelet.network-plugin=cni
+$ kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+$ kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+```
+Network policies will get installed automatically with a Sensu cluster.
+
+For testing, a NetworkPolicy capable CNI plugin is not necessary, the operator will install the policy regardless without effect.
+
+```
+$ minikube start --memory=3072 --kubernetes-version v1.10.0
 ```
 
 ### Prerequisites
