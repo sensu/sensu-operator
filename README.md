@@ -176,7 +176,7 @@ For example:
 ```
 $ kubectl apply -f example/example-sensu-cluster.yaml
 
-$ ./example/restore-operator/restore-backup --cluster-name=new-sensu-cluster --aws-bucket-name=YOUR_BUCKET --backup-name=sensu-cluster-backup-1529593491
+$ ./example/restore-operator/restore-backup --cluster-name=example-sensu-cluster --aws-bucket-name=YOUR_BUCKET --backup-name=sensu-cluster-backup-1529593491
 Restore of cluster 'example-sensu-cluster' with backup named 'sensu-cluster-backup-1529593491'
 sensurestore.sensu.io "example-sensu-cluster" created
 ```
