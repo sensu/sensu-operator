@@ -58,6 +58,16 @@ func DeleteDummyDeployment(kubecli kubernetes.Interface, nameSpace, name string)
 	return kubecli.AppsV1beta1().Deployments(nameSpace).Delete(name, deleteOptions)
 }
 
+func DeleteDummyPod(kubecli kubernetes.Interface, nameSpace, name string) error {
+	gracePeriod := int64(0)
+	deletePolicy := metav1.DeletePropagationBackground
+	deleteOptions := &metav1.DeleteOptions{
+		GracePeriodSeconds: &gracePeriod,
+		PropagationPolicy:  &deletePolicy,
+	}
+	return kubecli.CoreV1().Pods(nameSpace).Delete(name, deleteOptions)
+}
+
 func LogfWithTimestamp(t *testing.T, format string, args ...interface{}) {
 	t.Log(time.Now(), fmt.Sprintf(format, args...))
 }
