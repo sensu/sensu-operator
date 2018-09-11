@@ -7,7 +7,7 @@ spec:
   template:
     metadata:
       labels:
-        name: sensu-backup-operator
+        name: sensu-operator
     spec:
       containers:
       - name: sensu-backup-operator
