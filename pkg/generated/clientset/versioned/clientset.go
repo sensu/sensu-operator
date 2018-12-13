@@ -20,7 +20,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
-	sensuv1beta1 "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
+	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

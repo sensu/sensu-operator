@@ -18,7 +18,7 @@ function fmt_pass {
 		exit 1
 	fi
 
-	DOCKER_REPO_ROOT="/go/src/github.com/sensu/sensu-operator"
+	DOCKER_REPO_ROOT="/go/src/github.com/objectrocket/sensu-operator"
 	docker run --rm \
 		-v "${PWD}":"${DOCKER_REPO_ROOT}" \
 		-w "${DOCKER_REPO_ROOT}" \
@@ -42,7 +42,7 @@ function e2e_pass {
 }
 
 function unit_pass {
-	DOCKER_REPO_ROOT="/go/src/github.com/sensu/sensu-operator"
+	DOCKER_REPO_ROOT="/go/src/github.com/objectrocket/sensu-operator"
 	docker run --rm \
 		-v "${PWD}":"${DOCKER_REPO_ROOT}" \
 		-w "${DOCKER_REPO_ROOT}" \

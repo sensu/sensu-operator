@@ -21,4 +21,4 @@ gitHash="github.com/sensu/sensu-operator/version.GitSHA=${GIT_SHA}"
 
 go_ldflags="-X ${gitHash}"
 
-GO_BUILD_FLAGS="$@" go_build restore-operator
+GO_BUILD_FLAGS="$@" OS="$@" go_build restore-operator

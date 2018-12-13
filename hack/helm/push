@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -eo pipefail
+NEW_APP_VERSION="${CIRCLE_TAG:?This script should only be run in circleci with a git version tagged}"
+S3BUCKET=${S3BUCKET:-"or-helm-charts"}
+LOCKNAME=${LOCKNAME:-"sensu-operator"}
+CHART_NAME=${CHART_NAME:-"sensu-operator"}
+
+export PATH=$PATH:/home/circleci/.local/bin
+
+if ! pip freeze | grep aws-shell > /dev/null 2>&1; then
+    pip install aws-shell --user
+fi
+
+if ! pip freeze | grep bumpversion > /dev/null 2>&1; then
+    pip install bumpversion --user
+fi
+
+mkdir -p charts
+cp -r helm/${CHART_NAME} charts
+
+echo "Setting Chart and App version to ${NEW_APP_VERSION}..."
+bumpversion --parse '(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+(-rc\d+)?)' --current-version 0.0.0 --new-version ${NEW_APP_VERSION} patch charts/${CHART_NAME}/Chart.yaml
+
+echo "New Chart and App version: ${NEW_APP_VERSION}"
+echo "New Chart.yaml file:"
+cat charts/${CHART_NAME}/Chart.yaml
+
+while [ `aws s3 ls s3://$S3BUCKET | grep -c lock` -ne "0" ]; do
+  aws s3 cp s3://$S3BUCKET/lock lock
+  echo "S3 Bucket Locked"
+  cat lock
+  rm lock
+  sleep 60
+done
+
+echo "Locking S3 Bucket"
+echo $LOCKNAME > lock
+aws s3 cp lock s3://$S3BUCKET/lock
+
+echo "Pushing to S3"
+helm init --client-only
+helm plugin install https://github.com/hypnoglow/helm-s3.git
+helm repo add or-helm-charts s3://${S3BUCKET}/
+helm dep update charts/${CHART_NAME}
+helm package charts/${CHART_NAME}
+helm s3 push ${CHART_NAME}-${NEW_APP_VERSION}.tgz or-helm-charts
+if [ $? -ne 0 ]; then
+    echo "Error attempting to push Chart to S3"
+fi
+
+echo "Removing lock"
+aws s3 rm s3://$S3BUCKET/lock
+rm lock

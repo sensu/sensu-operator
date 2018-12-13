@@ -1,0 +1,18 @@
+name: sensu-operator
+version: 0.0.0
+description: ObjectRocket Sensu Operator
+keywords:
+  - ObjectRocket
+  - kubernetes
+  - sensu
+  - operator
+home: https://github.com/objectrocket/sensu-operator
+sources:
+  - https://github.com/objectrocket/sensu-operator
+maintainers: # (optional)
+  - name: ObjectRocket Platform
+    email: devops@objectrocket.com
+    url: objectrocket.com
+engine: gotpl # The name of the template engine (optional, defaults to gotpl)
+deprecated: false
+appVersion: 0.0.0

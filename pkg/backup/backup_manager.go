@@ -19,8 +19,8 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/sensu/sensu-operator/pkg/backup/writer"
-	"github.com/sensu/sensu-operator/pkg/util/constants"
+	"github.com/objectrocket/sensu-operator/pkg/backup/writer"
+	"github.com/objectrocket/sensu-operator/pkg/util/constants"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/sirupsen/logrus"

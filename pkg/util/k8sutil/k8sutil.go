@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 	"github.com/pborman/uuid"
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/util/etcdutil"
-	"github.com/sensu/sensu-operator/pkg/util/retryutil"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"

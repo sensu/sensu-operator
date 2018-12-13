@@ -17,7 +17,7 @@ package controller
 import (
 	"testing"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 )
 
 func TestValidate(t *testing.T) {

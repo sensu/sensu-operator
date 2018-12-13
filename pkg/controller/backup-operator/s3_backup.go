@@ -19,10 +19,10 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/backup"
-	"github.com/sensu/sensu-operator/pkg/backup/writer"
-	"github.com/sensu/sensu-operator/pkg/util/awsutil/s3factory"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/backup"
+	"github.com/objectrocket/sensu-operator/pkg/backup/writer"
+	"github.com/objectrocket/sensu-operator/pkg/util/awsutil/s3factory"
 
 	"k8s.io/client-go/kubernetes"
 )

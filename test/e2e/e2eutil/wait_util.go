@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
-	"github.com/sensu/sensu-operator/pkg/util"
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
-	"github.com/sensu/sensu-operator/pkg/util/retryutil"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/objectrocket/sensu-operator/pkg/util"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

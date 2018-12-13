@@ -1,8 +1,42 @@
 version: 2
 jobs:
+  markdownlint:
+    docker:
+      - image: circleci/node:10.14.2
+    steps:
+      - checkout
+      - run:
+          name: install markdownlint
+          command: |
+            sudo npm install -g markdownlint-cli
+            markdownlint --version
+      - run:
+          name: lint README.md
+          command: markdownlint --config .markdownlint.json README.md
   build:
+    working_directory: /go/src/github.com/objectrocket/sensu-operator
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: make dependencies
+          command: make dep
+      - save_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: Build the server binary and docker image
+          command: make docker-build          
+  e2e_tests:
     machine: true
-    working_directory: ~/.go_workspace/src/github.com/sensu/sensu-operator
+    working_directory: /go/src/github.com/objectrocket/sensu-operator
     steps:
       - checkout
       - run:
@@ -69,8 +103,111 @@ jobs:
           command: |
             export SENSU_API_URL="http://127.0.0.1:31180"
             KUBECONFIG=~/.kube/config \
-            OPERATOR_IMAGE=sensu/sensu-operator:test \
+            OPERATOR_IMAGE=objectrocket/sensu-operator:test \
             TEST_NAMESPACE=default \
             TEST_AWS_SECRET=sensu-backups-aws-secret \
             TEST_S3_BUCKET=sensu-backup-test \
             ./hack/test
+  unit_test:
+    working_directory: /go/src/github.com/objectrocket/sensu-operator
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - checkout
+      - restore_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: make dependencies
+          command: make dep
+      - save_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: go tests
+          command: make unittest
+  build_deploy:
+    working_directory: /go/src/github.com/objectrocket/sensu-operator
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: docker login
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker info
+      - restore_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: Install dep and dependencies
+          command: |
+            go get github.com/golang/dep/cmd/dep
+            make dep
+      - save_cache:
+          key: gopkg-{{ .Branch }}-{{ checksum "Gopkg.lock" }}
+          paths:
+              - /go/src/github.com/objectrocket/sensu-operator/vendor
+      - run:
+          name: docker build and push
+          command: |
+            make docker-build
+            make docker-deploy DOCKER_TAG=${CIRCLE_TAG}          
+  helm_push:
+    docker:
+      - image: circleci/python:3.6
+    environment:
+      DESIRED_VERSION: "v2.9.1"
+    steps:
+      - checkout
+      - run:
+          name: Install Helm
+          command: |
+            curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+      - run:
+          name: Push to S3
+          command: hack/helm/push
+workflows:
+  version: 2
+  # runs on all commits
+  build_and_test:
+    jobs:
+      - build
+      - unit_test
+      - markdownlint
+  test_build_deploy:
+    jobs:
+      - unit_test:
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+            branches:
+              ignore: /.*/
+      - build_deploy:
+          requires:
+            - unit_test
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+            branches:
+              ignore: /.*/
+      - helm_push:
+          requires:
+            - build_deploy
+            - unit_test
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+            branches:
+              ignore: /.*/

@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1beta1 "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
+	v1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

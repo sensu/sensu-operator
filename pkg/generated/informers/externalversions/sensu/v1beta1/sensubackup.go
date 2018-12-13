@@ -21,10 +21,10 @@ package v1beta1
 import (
 	time "time"
 
-	sensu_v1beta1 "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	versioned "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/sensu/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	v1beta1 "github.com/sensu/sensu-operator/pkg/generated/listers/sensu/v1beta1"
+	sensu_v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	versioned "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
+	v1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/listers/sensu/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

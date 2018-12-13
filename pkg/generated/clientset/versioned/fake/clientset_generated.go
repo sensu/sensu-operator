@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
-	sensuv1beta1 "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
-	fakesensuv1beta1 "github.com/sensu/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1/fake"
+	clientset "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
+	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
+	fakesensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
