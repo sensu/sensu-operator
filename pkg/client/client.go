@@ -15,9 +15,9 @@
 package client
 
 import (
-	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
 	"k8s.io/client-go/rest"
 )

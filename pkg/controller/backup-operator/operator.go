@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/client"
-	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
-	"github.com/sensu/sensu-operator/pkg/util/constants"
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/client"
+	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/objectrocket/sensu-operator/pkg/util/constants"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
 	"github.com/sirupsen/logrus"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

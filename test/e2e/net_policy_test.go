@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
-	"github.com/sensu/sensu-operator/test/e2e/e2eutil"
-	"github.com/sensu/sensu-operator/test/e2e/framework"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
+	"github.com/objectrocket/sensu-operator/test/e2e/e2eutil"
+	"github.com/objectrocket/sensu-operator/test/e2e/framework"
 )
 
 func TestClusterNetworkPolicy(t *testing.T) {

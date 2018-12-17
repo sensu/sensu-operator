@@ -17,7 +17,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/sensu/sensu-operator/test/e2e/framework"
+	"github.com/objectrocket/sensu-operator/test/e2e/framework"
 )
 
 func TestMain(m *testing.M) {

@@ -18,9 +18,9 @@ import (
 	"os"
 	"testing"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/test/e2e/e2eutil"
-	"github.com/sensu/sensu-operator/test/e2e/framework"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/test/e2e/e2eutil"
+	"github.com/objectrocket/sensu-operator/test/e2e/framework"
 )
 
 func TestResizeCluster3to5(t *testing.T) {

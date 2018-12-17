@@ -19,8 +19,8 @@ limitations under the License.
 package v1beta1
 
 import (
-	v1beta1 "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned/scheme"
+	v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

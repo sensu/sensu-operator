@@ -1,0 +1,41 @@
+# Default values for ingress.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This is adjustable without issues
+replicaCount: 1
+
+image:
+  repository: 'objectrocket/sensu-operator'
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecret:
+  name: 'or-docker-secret'
+
+resourceSettings:
+  limit:
+    - name: cpu
+      value: 500m
+    - name: memory
+      value: 256Mi
+  request:
+    - name: cpu
+      value: 500m
+    - name: memory
+      value: 256Mi
+
+logLevel: info
+
+nodeSelector:
+  node-role.kubernetes.io/platform_worker: "true"
+
+tolerations:
+  - effect: NoSchedule
+    key: node_role
+    operator: Equal
+    value: platform_worker
+
+sensu:
+   # To act for resources in all namespaces. More information in doc/clusterwide.md
+  clusterWide: false

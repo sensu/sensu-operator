@@ -19,10 +19,10 @@ import (
 	"errors"
 	"fmt"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/util/constants"
-	"github.com/sensu/sensu-operator/pkg/util/etcdutil"
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/util/constants"
+	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"

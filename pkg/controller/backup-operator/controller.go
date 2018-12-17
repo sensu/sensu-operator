@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"

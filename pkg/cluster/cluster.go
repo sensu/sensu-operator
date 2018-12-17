@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
-	"github.com/sensu/sensu-operator/pkg/generated/clientset/versioned"
-	"github.com/sensu/sensu-operator/pkg/util/etcdutil"
-	"github.com/sensu/sensu-operator/pkg/util/k8sutil"
-	"github.com/sensu/sensu-operator/pkg/util/retryutil"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
+	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
+	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"

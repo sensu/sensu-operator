@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/sensu/sensu-operator/pkg/backup/util"
+	"github.com/objectrocket/sensu-operator/pkg/backup/util"
 
 	"github.com/Azure/azure-sdk-for-go/storage"
 )

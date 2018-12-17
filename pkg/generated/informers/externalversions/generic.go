@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1beta1 "github.com/sensu/sensu-operator/pkg/apis/sensu/v1beta1"
+	v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )

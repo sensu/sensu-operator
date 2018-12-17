@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "sensu-operator.fullname" . }}
+  labels:
+    app: {{ template "sensu-operator.name" . }}
+    chart: {{ template "sensu-operator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sensu-operator.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "sensu-operator.name" . }}
+        release: {{ .Release.Name }}
+        name: {{ template "sensu-operator.fullname" . }}
+    spec:
+      containers:
+      - name: sensu-operator
+        image: {{ .Values.image.repository }}:{{ .Chart.AppVersion }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          limits:
+          {{- range .Values.resourceSettings.limit }}
+            {{ .name }}: {{ .value }}
+          {{- end }}
+          requests:
+          {{- range .Values.resourceSettings.request }}
+            {{ .name }}: {{ .value }}
+          {{- end }}
+        command:
+        - sensu-operator
+{{- if .Values.sensu.clusterWide }}
+        - -cluster-wide
+{{- end }}
+        - -logtostderr
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecret.name }}
+{{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+{{- end }}
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+{{- end }}

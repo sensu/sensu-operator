@@ -16,7 +16,6 @@ GIT_SHA=`git rev-parse --short HEAD || echo "GitNotFound"`
 bin_dir="$(pwd)/_output/bin"
 mkdir -p ${bin_dir} || true
 
-
 gitHash="github.com/sensu/sensu-operator/version.GitSHA=${GIT_SHA}"
 
 go_ldflags="-X ${gitHash}"
