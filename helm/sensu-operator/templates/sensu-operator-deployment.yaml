@@ -2,19 +2,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: or-sensu-operator
+  name: {{ template "sensu-operator.fullname" . }}
   labels:
-    app: or-sensu-operator
+    app: {{ template "sensu-operator.name" . }}
+    chart: {{ template "sensu-operator.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: or-sensu-operator
+      app: {{ template "sensu-operator.name" . }}
+      release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: or-sensu-operator
-        name: or-sensu-operator
+        app: {{ template "sensu-operator.name" . }}
+        release: {{ .Release.Name }}
+        name: {{ template "sensu-operator.fullname" . }}
     spec:
       containers:
       - name: sensu-operator
@@ -44,7 +49,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-{{- if .Values.enableAdminToken }}
       imagePullSecrets:
       - name: {{ .Values.imagePullSecret.name }}
 {{- if .Values.tolerations }}
