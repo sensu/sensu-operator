@@ -75,6 +75,11 @@ const (
 	defaultDNSTimeout = int64(0)
 )
 
+type label struct {
+	key   string
+	value string
+}
+
 const TolerateUnreadyEndpointsAnnotation = "service.alpha.kubernetes.io/tolerate-unready-endpoints"
 
 func GetSensuVersion(pod *v1.Pod) string {
@@ -307,7 +312,12 @@ func CreateAndWaitDeployment(kubecli kubernetes.Interface, ns string, deployment
 }
 
 func newSensuServiceManifest(svcName, clusterName, clusterIP string, ports []v1.ServicePort) *v1.Service {
-	labels := LabelsForCluster(clusterName)
+	var extraLabels = []label{{
+		key:   "service",
+		value: svcName,
+	}}
+
+	labels := LabelsForCluster(clusterName, extraLabels...)
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   svcName,
@@ -666,11 +676,17 @@ func ClusterListOpt(clusterName string) metav1.ListOptions {
 	}
 }
 
-func LabelsForCluster(clusterName string) map[string]string {
-	return map[string]string{
+func LabelsForCluster(clusterName string, extraLabels ...label) map[string]string {
+	labels := map[string]string{
 		"sensu_cluster": clusterName,
 		"app":           "sensu",
 	}
+
+	for _, v := range extraLabels {
+		labels[v.key] = v.value
+	}
+
+	return labels
 }
 
 func CreatePatch(o, n, datastruct interface{}) ([]byte, error) {
