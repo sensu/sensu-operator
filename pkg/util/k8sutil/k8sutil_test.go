@@ -115,7 +115,6 @@ func Test_newSensuServiceManifest(t *testing.T) {
 					Selector: map[string]string{
 						"sensu_cluster": "testCluster",
 						"app":           "sensu",
-						"service":       "dashboard",
 					},
 					ClusterIP: "127.0.0.1",
 				},
