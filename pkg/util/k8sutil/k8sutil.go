@@ -318,6 +318,14 @@ func newSensuServiceManifest(svcName, clusterName, clusterIP string, ports []v1.
 	}}
 
 	labels := LabelsForCluster(clusterName, extraLabels...)
+
+	// Create a copy of the labels map to use as the selector, removing the 'service' key
+	selectorLabels := map[string]string{}
+	for k, v := range labels {
+		selectorLabels[k] = v
+	}
+	delete(selectorLabels, "service")
+
 	svc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   svcName,
@@ -328,7 +336,7 @@ func newSensuServiceManifest(svcName, clusterName, clusterIP string, ports []v1.
 		},
 		Spec: v1.ServiceSpec{
 			Ports:     ports,
-			Selector:  labels,
+			Selector:  selectorLabels,
 			ClusterIP: clusterIP,
 		},
 	}
