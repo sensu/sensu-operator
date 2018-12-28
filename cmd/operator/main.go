@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -32,7 +33,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -53,6 +54,10 @@ var (
 	createCRD bool
 
 	clusterWide bool
+
+	workerThreads int
+
+	processingRetries int
 )
 
 func init() {
@@ -61,6 +66,8 @@ func init() {
 	flag.BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
 	flag.DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
 	flag.BoolVar(&clusterWide, "cluster-wide", false, "Enable operator to watch clusters in all namespaces")
+	flag.IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
+	flag.IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
 	flag.Parse()
 }
 
@@ -130,8 +137,12 @@ func run(stop <-chan struct{}) {
 	cfg := newControllerConfig()
 
 	c := controller.New(cfg)
-	err := c.Start()
-	logrus.Fatalf("controller Start() failed: %v", err)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	go c.Start(ctx)
+	select {
+	case <-stop:
+		cancelFunc()
+	}
 }
 
 func newControllerConfig() controller.Config {
@@ -143,13 +154,15 @@ func newControllerConfig() controller.Config {
 	}
 
 	cfg := controller.Config{
-		Namespace:      namespace,
-		ClusterWide:    clusterWide,
-		ServiceAccount: serviceAccount,
-		KubeCli:        kubecli,
-		KubeExtCli:     k8sutil.MustNewKubeExtClient(),
-		SensuCRCli:     client.MustNewInCluster(),
-		CreateCRD:      createCRD,
+		Namespace:         namespace,
+		ClusterWide:       clusterWide,
+		ServiceAccount:    serviceAccount,
+		KubeCli:           kubecli,
+		KubeExtCli:        k8sutil.MustNewKubeExtClient(),
+		SensuCRCli:        client.MustNewInCluster(),
+		CreateCRD:         createCRD,
+		WorkerThreads:     workerThreads,
+		ProcessingRetries: processingRetries,
 	}
 
 	return cfg

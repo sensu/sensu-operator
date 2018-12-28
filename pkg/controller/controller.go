@@ -27,6 +27,8 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 var initRetryWaitTime = 30 * time.Second
@@ -40,17 +42,22 @@ type Controller struct {
 	logger *logrus.Entry
 	Config
 
+	indexer  cache.Indexer
+	queue    workqueue.RateLimitingInterface
+	informer cache.Controller
 	clusters map[string]*cluster.Cluster
 }
 
 type Config struct {
-	Namespace      string
-	ClusterWide    bool
-	ServiceAccount string
-	KubeCli        kubernetes.Interface
-	KubeExtCli     apiextensionsclient.Interface
-	SensuCRCli     versioned.Interface
-	CreateCRD      bool
+	Namespace         string
+	ClusterWide       bool
+	ServiceAccount    string
+	KubeCli           kubernetes.Interface
+	KubeExtCli        apiextensionsclient.Interface
+	SensuCRCli        versioned.Interface
+	CreateCRD         bool
+	WorkerThreads     int
+	ProcessingRetries int
 }
 
 func New(cfg Config) *Controller {

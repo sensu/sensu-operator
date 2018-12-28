@@ -8,4 +8,4 @@ metadata:
   #   sensu.io/scope: clusterwide
 spec:
   size: 3
-  version: "master"
+  version: "2.0.0-beta.8"

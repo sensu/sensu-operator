@@ -18,7 +18,7 @@ import (
 	"errors"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,7 +80,7 @@ type ClusterSpec struct {
 	// By default, it is `sensuapp/sensu-go`.
 	Repository string `json:"repository,omitempty"`
 
-	// Version is the expected version of the sensui cluster.
+	// Version is the expected version of the sensu cluster.
 	// The sensu-operator will eventually make the sensu cluster version
 	// equal to the expected version.
 	//

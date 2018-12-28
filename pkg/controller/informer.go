@@ -25,8 +25,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 // TODO: get rid of this once we use workqueue
@@ -36,7 +38,12 @@ func init() {
 	pt = newPanicTimer(time.Minute, "unexpected long blocking (> 1 Minute) when handling cluster event")
 }
 
-func (c *Controller) Start() error {
+// Start the controller's informer to watch for custom resource update
+func (c *Controller) Start(ctx context.Context) {
+	var (
+		ns     string
+		source *cache.ListWatch
+	)
 	// TODO: get rid of this init code. CRD and storage class will be managed outside of operator.
 	for {
 		err := c.initResource()
@@ -47,35 +54,104 @@ func (c *Controller) Start() error {
 		c.logger.Infof("retry in %v...", initRetryWaitTime)
 		time.Sleep(initRetryWaitTime)
 	}
-
+	c.logger.Infof("Created resources")
 	probe.SetReady()
-	c.run()
-	panic("unreachable")
-}
 
-func (c *Controller) run() {
-	var ns string
 	if c.Config.ClusterWide {
 		ns = metav1.NamespaceAll
 	} else {
 		ns = c.Config.Namespace
 	}
-
-	source := cache.NewListWatchFromClient(
+	c.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	defer c.queue.ShutDown()
+	source = cache.NewListWatchFromClient(
 		c.Config.SensuCRCli.SensuV1beta1().RESTClient(),
 		api.SensuClusterResourcePlural,
 		ns,
 		fields.Everything())
-
-	_, informer := cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
-		AddFunc:    c.onAddSensuClus,
-		UpdateFunc: c.onUpdateSensuClus,
-		DeleteFunc: c.onDeleteSensuClus,
+	c.indexer, c.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.queue.Add(key)
+			}
+		},
+		UpdateFunc: func(old interface{}, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				c.queue.Add(key)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.queue.Add(key)
+			}
+		},
 	}, cache.Indexers{})
+	c.logger.Infof("Created index and informer")
+	c.startProcessing(ctx)
+}
 
-	ctx := context.TODO()
-	// TODO: use workqueue to avoid blocking
-	informer.Run(ctx.Done())
+func (c *Controller) startProcessing(ctx context.Context) {
+	var (
+		cacheStopCh chan struct{}
+		untilStopCh chan struct{}
+	)
+	cacheStopCh = make(chan struct{})
+	untilStopCh = make(chan struct{})
+	infCtx, infCancel := context.WithCancel(ctx)
+	go c.informer.Run(infCtx.Done())
+	c.logger.Infof("Started informer")
+	if !cache.WaitForCacheSync(infCtx.Done(), c.informer.HasSynced) {
+		c.logger.Fatal("Timed out waiting for caches to sync")
+	}
+	for i := 0; i < c.Config.WorkerThreads; i++ {
+		go wait.Until(c.run, time.Second, untilStopCh)
+	}
+	c.logger.Infof("Started worker %d threads", c.Config.WorkerThreads)
+	select {
+	case <-ctx.Done():
+		c.logger.Errorf("Stopping channels")
+		close(cacheStopCh)
+		close(untilStopCh)
+		infCancel()
+	}
+	c.logger.Infof("Finished startProcessing")
+}
+
+func (c *Controller) run() {
+	for c.processNextItem() {
+		c.logger.Infof("Processed next item")
+	}
+}
+
+func (c *Controller) processNextItem() bool {
+	key, quit := c.queue.Get()
+	if quit {
+		return false
+	}
+	defer c.queue.Done(key)
+	obj, exists, err := c.indexer.GetByKey(key.(string))
+	if err != nil {
+		if c.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			c.logger.Errorf("Error fetching object with key %s from store: %v. Retrying later.", key, err)
+			c.queue.AddRateLimited(key)
+			return true
+		}
+		c.logger.Errorf("Fatal failure fetching object with key %s from store: %v", key, err)
+	} else {
+		c.logger.Infof("Object: %v, exists: %t", obj, exists)
+		if !exists {
+			c.onDeleteSensuClus(obj)
+		} else {
+			c.onUpdateSensuClus(obj)
+		}
+	}
+	c.queue.Forget(key)
+	return true
 }
 
 func (c *Controller) initResource() error {
@@ -88,11 +164,7 @@ func (c *Controller) initResource() error {
 	return nil
 }
 
-func (c *Controller) onAddSensuClus(obj interface{}) {
-	c.syncSensuClus(obj.(*api.SensuCluster))
-}
-
-func (c *Controller) onUpdateSensuClus(oldObj, newObj interface{}) {
+func (c *Controller) onUpdateSensuClus(newObj interface{}) {
 	c.syncSensuClus(newObj.(*api.SensuCluster))
 }
 
@@ -105,7 +177,7 @@ func (c *Controller) onDeleteSensuClus(obj interface{}) {
 		}
 		clus, ok = tombstone.Obj.(*api.SensuCluster)
 		if !ok {
-			panic(fmt.Sprintf("Tombstone contained object that is not an SensuCluster: %#v", obj))
+			panic(fmt.Sprintf("Tombstone contained object that is not a SensuCluster: %#v", obj))
 		}
 	}
 	ev := &Event{
