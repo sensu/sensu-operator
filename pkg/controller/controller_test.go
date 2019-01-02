@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 	fakesensu "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/fake"
 	sensuscheme "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/scheme"
@@ -93,9 +94,76 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	controller.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	defer controller.queue.ShutDown()
 	roundTripper := func(req *http.Request) (*http.Response, error) {
-		return &http.Response{
-			Body: ioutil.NopCloser(bytes.NewBufferString(`{}`)),
-		}, nil
+		//fmt.Printf("Request: %v", req)
+		response := &http.Response{
+			Body: ioutil.NopCloser(bytes.NewBufferString(`
+			{
+				"apiVersion": "sensu.io/v1beta1",
+				"items": [
+				  {
+					"apiVersion": "sensu.io/v1beta1",
+					"kind": "SensuCluster",
+					"metadata": {
+					  "annotations": {
+						"kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"sensu.io/v1beta1\",\"kind\":\"SensuCluster\",\"metadata\":{\"annotations\":{},\"name\":\"example-sensu-cluster\",\"namespace\":\"default\"},\"spec\":{\"size\":3,\"version\":\"2.0.0-beta.8\"}}\n"
+					  },
+					  "clusterName": "",
+					  "creationTimestamp": "2019-01-02T23:14:52Z",
+					  "generation": 1,
+					  "name": "example-sensu-cluster",
+					  "namespace": "default",
+					  "resourceVersion": "3570",
+					  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters/example-sensu-cluster",
+					  "uid": "358db0b6-0ee4-11e9-a33b-0800272dcccb"
+					},
+					"spec": {
+					  "repository": "sensu/sensu",
+					  "size": 3,
+					  "version": "2.0.0-beta.8"
+					},
+					"status": {
+					  "agentPort": 8081,
+					  "agentServiceName": "example-sensu-cluster-agent",
+					  "apiPort": 8080,
+					  "apiServiceName": "example-sensu-cluster-api",
+					  "conditions": [
+						{
+						  "lastTransitionTime": "2019-01-02T23:15:48Z",
+						  "lastUpdateTime": "2019-01-02T23:15:48Z",
+						  "reason": "Cluster available",
+						  "status": "True",
+						  "type": "Available"
+						}
+					  ],
+					  "currentVersion": "2.0.0-beta.8",
+					  "dashboardPort": 3000,
+					  "dashboardServiceName": "example-sensu-cluster-dashboard",
+					  "members": {
+						"ready": [
+						  "example-sensu-cluster-6h5wp5t264",
+						  "example-sensu-cluster-8ldr4vhlz5",
+						  "example-sensu-cluster-b4cf6wcnpc"
+						]
+					  },
+					  "phase": "Running",
+					  "size": 3,
+					  "targetVersion": ""
+					}
+				  }
+				],
+				"kind": "SensuClusterList",
+				"metadata": {
+				  "continue": "",
+				  "resourceVersion": "3570",
+				  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters"
+				}
+			  }
+`)),
+			StatusCode: 200,
+		}
+		response.Header = http.Header{}
+		response.Header.Add("Content-Type", "application/json")
+		return response, nil
 	}
 	controller.Config.SensuCRCli.SensuV1beta1()
 	source = cache.NewListWatchFromClient(
@@ -139,7 +207,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		controller: controller.informer,
 	}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	controller.startProcessing(ctx)
+	go controller.startProcessing(ctx)
 	time.Sleep(5 * time.Second)
 	cancelFunc()
 }
