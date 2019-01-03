@@ -44,19 +44,14 @@ import (
 )
 
 var (
-	namespace  string
-	name       string
-	listenAddr string
-	gcInterval time.Duration
-
-	printVersion bool
-
-	createCRD bool
-
-	clusterWide bool
-
-	workerThreads int
-
+	namespace         string
+	name              string
+	listenAddr        string
+	gcInterval        time.Duration
+	printVersion      bool
+	createCRD         bool
+	clusterWide       bool
+	workerThreads     int
 	processingRetries int
 )
 

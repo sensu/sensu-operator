@@ -54,7 +54,6 @@ func (c *Controller) Start(ctx context.Context) {
 		c.logger.Infof("retry in %v...", initRetryWaitTime)
 		time.Sleep(initRetryWaitTime)
 	}
-	c.logger.Infof("Created resources")
 	probe.SetReady()
 
 	if c.Config.ClusterWide {
@@ -91,7 +90,6 @@ func (c *Controller) Start(ctx context.Context) {
 			}
 		},
 	}, cache.Indexers{})
-	c.logger.Infof("Created index and informer")
 	c.startProcessing(ctx)
 }
 
@@ -104,27 +102,22 @@ func (c *Controller) startProcessing(ctx context.Context) {
 	untilStopCh = make(chan struct{})
 	infCtx, infCancel := context.WithCancel(ctx)
 	go c.informer.Run(infCtx.Done())
-	c.logger.Infof("Started informer")
 	if !cache.WaitForCacheSync(infCtx.Done(), c.informer.HasSynced) {
 		c.logger.Fatal("Timed out waiting for caches to sync")
 	}
 	for i := 0; i < c.Config.WorkerThreads; i++ {
 		go wait.Until(c.run, time.Second, untilStopCh)
 	}
-	c.logger.Infof("Started worker %d threads", c.Config.WorkerThreads)
 	select {
 	case <-ctx.Done():
-		c.logger.Errorf("Stopping channels")
 		close(cacheStopCh)
 		close(untilStopCh)
 		infCancel()
 	}
-	c.logger.Infof("Finished startProcessing")
 }
 
 func (c *Controller) run() {
 	for c.processNextItem() {
-		c.logger.Infof("Processed next item")
 	}
 }
 
@@ -137,13 +130,10 @@ func (c *Controller) processNextItem() bool {
 	obj, exists, err := c.indexer.GetByKey(key.(string))
 	if err != nil {
 		if c.queue.NumRequeues(key) < c.Config.ProcessingRetries {
-			c.logger.Errorf("Error fetching object with key %s from store: %v. Retrying later.", key, err)
 			c.queue.AddRateLimited(key)
 			return true
 		}
-		c.logger.Errorf("Fatal failure fetching object with key %s from store: %v", key, err)
 	} else {
-		c.logger.Infof("Object: %v, exists: %t", obj, exists)
 		if !exists {
 			c.onDeleteSensuClus(obj)
 		} else {

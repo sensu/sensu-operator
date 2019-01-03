@@ -5,10 +5,10 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
-	_ "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
 	fakesensu "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/fake"
 	sensuscheme "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/scheme"
@@ -70,6 +70,10 @@ func (f *FakeInformer) LastSyncResourceVersion() string {
 	return f.controller.LastSyncResourceVersion()
 }
 
+func makeInformer() {
+
+}
+
 func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	var (
 		source *cache.ListWatch
@@ -94,7 +98,89 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	controller.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	defer controller.queue.ShutDown()
 	roundTripper := func(req *http.Request) (*http.Response, error) {
-		//fmt.Printf("Request: %v", req)
+		response := &http.Response{
+			Body: ioutil.NopCloser(bytes.NewBufferString(`
+			{
+				"apiVersion": "sensu.io/v1beta1",
+				"items": [],
+				"kind": "SensuClusterList",
+				"metadata": {
+				  "continue": "",
+				  "resourceVersion": "3570",
+				  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters"
+				}
+			  }
+`)),
+			StatusCode: 200,
+		}
+		response.Header = http.Header{"Content-Type": []string{"application/json"}}
+		return response, nil
+	}
+	controller.Config.SensuCRCli.SensuV1beta1()
+	source = cache.NewListWatchFromClient(
+		&fakerest.RESTClient{
+			Client: fakerest.CreateHTTPClient(roundTripper),
+			NegotiatedSerializer: serializer.DirectCodecFactory{
+				CodecFactory: serializer.NewCodecFactory(sensuscheme.Scheme),
+			},
+			GroupVersion:     schema.GroupVersion{},
+			VersionedAPIPath: "/not/a/real/path",
+		},
+		api.SensuClusterResourcePlural,
+		controller.Config.Namespace,
+		fields.Everything())
+	controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+		UpdateFunc: func(old interface{}, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+	}, cache.Indexers{})
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	go controller.startProcessing(ctx)
+	time.Sleep(5 * time.Second)
+	cancelFunc()
+}
+
+func (s *InformerTestSuite) TestInformerWithOneCluster() {
+	var (
+		source *cache.ListWatch
+	)
+
+	controller := New(Config{
+		Namespace:         "testns",
+		ClusterWide:       true,
+		ServiceAccount:    "testsa",
+		KubeCli:           testclient.NewSimpleClientset(),
+		KubeExtCli:        fakeapiextensionsapiserver.NewSimpleClientset(),
+		SensuCRCli:        fakesensu.NewSimpleClientset(),
+		CreateCRD:         false,
+		WorkerThreads:     1,
+		ProcessingRetries: 0,
+	})
+
+	err := controller.initResource()
+	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
+	probe.SetReady()
+
+	controller.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	defer controller.queue.ShutDown()
+	roundTripper := func(req *http.Request) (*http.Response, error) {
 		response := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`
 			{
@@ -161,8 +247,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 `)),
 			StatusCode: 200,
 		}
-		response.Header = http.Header{}
-		response.Header.Add("Content-Type", "application/json")
+		response.Header = http.Header{"Content-Type": []string{"application/json"}}
 		return response, nil
 	}
 	controller.Config.SensuCRCli.SensuV1beta1()
@@ -178,34 +263,29 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		api.SensuClusterResourcePlural,
 		controller.Config.Namespace,
 		fields.Everything())
-	if controller.indexer == nil || controller.informer == nil {
-		controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				key, err := cache.MetaNamespaceKeyFunc(obj)
-				if err == nil {
-					controller.queue.Add(key)
-				}
-			},
-			UpdateFunc: func(old interface{}, new interface{}) {
-				key, err := cache.MetaNamespaceKeyFunc(new)
-				if err == nil {
-					controller.queue.Add(key)
-				}
-			},
-			DeleteFunc: func(obj interface{}) {
-				// IndexerInformer uses a delta queue, therefore for deletes we have to use this
-				// key function.
-				key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-				if err == nil {
-					controller.queue.Add(key)
-				}
-			},
-		}, cache.Indexers{})
-	}
-	controller.informer = &FakeInformer{
-		hasSynced:  true,
-		controller: controller.informer,
-	}
+	controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			s.Failf("Failing in add:", "'%v'", reflect.TypeOf(obj))
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+		UpdateFunc: func(old interface{}, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				controller.queue.Add(key)
+			}
+		},
+	}, cache.Indexers{})
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go controller.startProcessing(ctx)
 	time.Sleep(5 * time.Second)
