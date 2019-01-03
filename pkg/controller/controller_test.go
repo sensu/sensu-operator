@@ -5,7 +5,6 @@ import (
 	"context"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
@@ -51,27 +50,6 @@ func (s *InformerTestSuite) TearDownTest() {
 func TestRunSuite(t *testing.T) {
 	suiteTester := new(InformerTestSuite)
 	suite.Run(t, suiteTester)
-}
-
-type FakeInformer struct {
-	controller cache.Controller
-	hasSynced  bool
-}
-
-func (f *FakeInformer) Run(stopCh <-chan struct{}) {
-	f.controller.Run(stopCh)
-}
-
-func (f *FakeInformer) HasSynced() bool {
-	return f.hasSynced
-}
-
-func (f *FakeInformer) LastSyncResourceVersion() string {
-	return f.controller.LastSyncResourceVersion()
-}
-
-func makeInformer() {
-
 }
 
 func (s *InformerTestSuite) TestInformerWithNoEvents() {
@@ -265,7 +243,6 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		fields.Everything())
 	controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			s.Failf("Failing in add:", "'%v'", reflect.TypeOf(obj))
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
 				controller.queue.Add(key)
