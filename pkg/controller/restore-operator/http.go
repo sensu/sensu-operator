@@ -20,7 +20,7 @@ import (
 	"io"
 	"net/http"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/backup/backupapi"
 	"github.com/objectrocket/sensu-operator/pkg/backup/reader"
 	"github.com/objectrocket/sensu-operator/pkg/util/awsutil/s3factory"

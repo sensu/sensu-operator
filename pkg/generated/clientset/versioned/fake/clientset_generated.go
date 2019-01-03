@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The sensu-operator Authors
+Copyright 2019 The sensu-operator Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
-	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1"
-	fakesensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/sensu/v1beta1/fake"
+	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/objectrocket/v1beta1"
+	fakesensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/objectrocket/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/client"
 	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"

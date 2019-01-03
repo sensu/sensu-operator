@@ -16,6 +16,6 @@ docker run --rm \
   "all" \
   "github.com/objectrocket/sensu-operator/pkg/generated" \
   "github.com/objectrocket/sensu-operator/pkg/apis" \
-  "sensu:v1beta1" \
+  "objectrocket:v1beta1" \
   --go-header-file "./hack/k8s/codegen/boilerplate.go.txt" \
   $@

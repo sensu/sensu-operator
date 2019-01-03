@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The sensu-operator Authors
+Copyright 2019 The sensu-operator Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

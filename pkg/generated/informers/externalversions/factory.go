@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The sensu-operator Authors
+Copyright 2019 The sensu-operator Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 
 	versioned "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
-	sensu "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/sensu"
+	objectrocket "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/objectrocket"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -123,9 +123,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Sensu() sensu.Interface
+	Sensu() objectrocket.Interface
 }
 
-func (f *sharedInformerFactory) Sensu() sensu.Interface {
-	return sensu.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Sensu() objectrocket.Interface {
+	return objectrocket.New(f, f.namespace, f.tweakListOptions)
 }
