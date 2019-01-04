@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=objectrocket.com, Version=v1beta1
+	case v1beta1.SchemeGroupVersion.WithResource("sensuassets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuAssets().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensubackups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuBackups().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensuclusters"):

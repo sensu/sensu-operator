@@ -27,6 +27,7 @@ import (
 
 type ObjectrocketV1beta1Interface interface {
 	RESTClient() rest.Interface
+	SensuAssetsGetter
 	SensuBackupsGetter
 	SensuClustersGetter
 	SensuRestoresGetter
@@ -35,6 +36,10 @@ type ObjectrocketV1beta1Interface interface {
 // ObjectrocketV1beta1Client is used to interact with features provided by the objectrocket.com group.
 type ObjectrocketV1beta1Client struct {
 	restClient rest.Interface
+}
+
+func (c *ObjectrocketV1beta1Client) SensuAssets(namespace string) SensuAssetInterface {
+	return newSensuAssets(c, namespace)
 }
 
 func (c *ObjectrocketV1beta1Client) SensuBackups(namespace string) SensuBackupInterface {

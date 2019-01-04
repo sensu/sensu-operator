@@ -28,6 +28,10 @@ type FakeObjectrocketV1beta1 struct {
 	*testing.Fake
 }
 
+func (c *FakeObjectrocketV1beta1) SensuAssets(namespace string) v1beta1.SensuAssetInterface {
+	return &FakeSensuAssets{c, namespace}
+}
+
 func (c *FakeObjectrocketV1beta1) SensuBackups(namespace string) v1beta1.SensuBackupInterface {
 	return &FakeSensuBackups{c, namespace}
 }

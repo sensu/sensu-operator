@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1beta1
 
+// SensuAssetListerExpansion allows custom methods to be added to
+// SensuAssetLister.
+type SensuAssetListerExpansion interface{}
+
+// SensuAssetNamespaceListerExpansion allows custom methods to be added to
+// SensuAssetNamespaceLister.
+type SensuAssetNamespaceListerExpansion interface{}
+
 // SensuBackupListerExpansion allows custom methods to be added to
 // SensuBackupLister.
 type SensuBackupListerExpansion interface{}

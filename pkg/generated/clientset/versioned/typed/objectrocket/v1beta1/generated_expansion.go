@@ -18,6 +18,8 @@ limitations under the License.
 
 package v1beta1
 
+type SensuAssetExpansion interface{}
+
 type SensuBackupExpansion interface{}
 
 type SensuClusterExpansion interface{}
