@@ -5,7 +5,7 @@ metadata:
   namespace: <NAMESPACE>
 rules:
 - apiGroups:
-  - sensu.io
+  - objectrocket.com
   resources:
   - sensuclusters
   - sensubackups

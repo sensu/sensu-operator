@@ -54,7 +54,7 @@ type sensuClusters struct {
 }
 
 // newSensuClusters returns a SensuClusters
-func newSensuClusters(c *SensuV1beta1Client, namespace string) *sensuClusters {
+func newSensuClusters(c *ObjectrocketV1beta1Client, namespace string) *sensuClusters {
 	return &sensuClusters{
 		client: c.RESTClient(),
 		ns:     namespace,

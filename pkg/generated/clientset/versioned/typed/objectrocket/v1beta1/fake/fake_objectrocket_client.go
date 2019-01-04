@@ -24,25 +24,25 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeSensuV1beta1 struct {
+type FakeObjectrocketV1beta1 struct {
 	*testing.Fake
 }
 
-func (c *FakeSensuV1beta1) SensuBackups(namespace string) v1beta1.SensuBackupInterface {
+func (c *FakeObjectrocketV1beta1) SensuBackups(namespace string) v1beta1.SensuBackupInterface {
 	return &FakeSensuBackups{c, namespace}
 }
 
-func (c *FakeSensuV1beta1) SensuClusters(namespace string) v1beta1.SensuClusterInterface {
+func (c *FakeObjectrocketV1beta1) SensuClusters(namespace string) v1beta1.SensuClusterInterface {
 	return &FakeSensuClusters{c, namespace}
 }
 
-func (c *FakeSensuV1beta1) SensuRestores(namespace string) v1beta1.SensuRestoreInterface {
+func (c *FakeObjectrocketV1beta1) SensuRestores(namespace string) v1beta1.SensuRestoreInterface {
 	return &FakeSensuRestores{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeSensuV1beta1) RESTClient() rest.Interface {
+func (c *FakeObjectrocketV1beta1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

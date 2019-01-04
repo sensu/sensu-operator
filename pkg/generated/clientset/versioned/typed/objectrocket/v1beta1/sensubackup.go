@@ -54,7 +54,7 @@ type sensuBackups struct {
 }
 
 // newSensuBackups returns a SensuBackups
-func newSensuBackups(c *SensuV1beta1Client, namespace string) *sensuBackups {
+func newSensuBackups(c *ObjectrocketV1beta1Client, namespace string) *sensuBackups {
 	return &sensuBackups{
 		client: c.RESTClient(),
 		ns:     namespace,

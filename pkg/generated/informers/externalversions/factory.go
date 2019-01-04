@@ -123,9 +123,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Sensu() objectrocket.Interface
+	Objectrocket() objectrocket.Interface
 }
 
-func (f *sharedInformerFactory) Sensu() objectrocket.Interface {
+func (f *sharedInformerFactory) Objectrocket() objectrocket.Interface {
 	return objectrocket.New(f, f.namespace, f.tweakListOptions)
 }

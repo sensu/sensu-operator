@@ -30,13 +30,13 @@ import (
 
 // FakeSensuRestores implements SensuRestoreInterface
 type FakeSensuRestores struct {
-	Fake *FakeSensuV1beta1
+	Fake *FakeObjectrocketV1beta1
 	ns   string
 }
 
-var sensurestoresResource = schema.GroupVersionResource{Group: "sensu.io", Version: "v1beta1", Resource: "sensurestores"}
+var sensurestoresResource = schema.GroupVersionResource{Group: "objectrocket.com", Version: "v1beta1", Resource: "sensurestores"}
 
-var sensurestoresKind = schema.GroupVersionKind{Group: "sensu.io", Version: "v1beta1", Kind: "SensuRestore"}
+var sensurestoresKind = schema.GroupVersionKind{Group: "objectrocket.com", Version: "v1beta1", Kind: "SensuRestore"}
 
 // Get takes name of the sensuRestore, and returns the corresponding sensuRestore object, and an error if there is any.
 func (c *FakeSensuRestores) Get(name string, options v1.GetOptions) (result *v1beta1.SensuRestore, err error) {

@@ -61,13 +61,13 @@ func NewFilteredSensuBackupInformer(client versioned.Interface, namespace string
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuBackups(namespace).List(options)
+				return client.ObjectrocketV1beta1().SensuBackups(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuBackups(namespace).Watch(options)
+				return client.ObjectrocketV1beta1().SensuBackups(namespace).Watch(options)
 			},
 		},
 		&sensu_v1beta1.SensuBackup{},

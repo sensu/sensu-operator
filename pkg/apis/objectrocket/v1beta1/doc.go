@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package
-// +groupName=sensu.io
+// +groupName=objectrocket.com
 package v1beta1

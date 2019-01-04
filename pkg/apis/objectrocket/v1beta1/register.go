@@ -23,7 +23,7 @@ import (
 const (
 	SensuClusterResourceKind   = "SensuCluster"
 	SensuClusterResourcePlural = "sensuclusters"
-	groupName                  = "sensu.io"
+	groupName                  = "objectrocket.com"
 
 	SensuBackupResourceKind   = "SensuBackup"
 	SensuBackupResourcePlural = "sensubackups"

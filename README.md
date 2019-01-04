@@ -170,7 +170,7 @@ The `create-backup` helper script can be used to create backups:
 ```bash
 $ ./example/backup-operator/create-backup --aws-bucket-name=YOUR_BUCKET --backup-name=sensu-cluster-backup-$(date +%s)
 Backup of cluster 'example-sensu-cluster' with backup named 'sensu-cluster-backup-1529593491'
-sensubackup.sensu.io "sensu-cluster-backup-1529593491" created
+sensubackup.objectrocket.com "sensu-cluster-backup-1529593491" created
 ```
 
 ### Restore
@@ -188,7 +188,7 @@ kubectl apply -f example/example-sensu-cluster.yaml
 
 $ ./example/restore-operator/restore-backup --cluster-name=example-sensu-cluster --aws-bucket-name=YOUR_BUCKET --backup-name=sensu-cluster-backup-1529593491
 Restore of cluster 'example-sensu-cluster' with backup named 'sensu-cluster-backup-1529593491'
-sensurestore.sensu.io "example-sensu-cluster" created
+sensurestore.objectrocket.com "example-sensu-cluster" created
 ```
 
 If everything went well, delete the `SensuRestore` resource, e.g.:

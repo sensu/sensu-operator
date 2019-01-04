@@ -37,7 +37,7 @@ type StorageCheckerOptions struct {
 
 func CreateCluster(t *testing.T, crClient versioned.Interface, namespace string, cl *api.SensuCluster) (*api.SensuCluster, error) {
 	cl.Namespace = namespace
-	res, err := crClient.SensuV1beta1().SensuClusters(namespace).Create(cl)
+	res, err := crClient.ObjectrocketV1beta1().SensuClusters(namespace).Create(cl)
 	if err != nil {
 		return nil, err
 	}
@@ -51,14 +51,14 @@ func UpdateCluster(crClient versioned.Interface, cl *api.SensuCluster, maxRetrie
 	namespace := cl.Namespace
 	result := &api.SensuCluster{}
 	err := retryutil.Retry(1*time.Second, maxRetries, func() (done bool, err error) {
-		sensuCluster, err := crClient.SensuV1beta1().SensuClusters(namespace).Get(name, metav1.GetOptions{})
+		sensuCluster, err := crClient.ObjectrocketV1beta1().SensuClusters(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 
 		updateFunc(sensuCluster)
 
-		result, err = crClient.SensuV1beta1().SensuClusters(namespace).Update(sensuCluster)
+		result, err = crClient.ObjectrocketV1beta1().SensuClusters(namespace).Update(sensuCluster)
 		if err != nil {
 			if apierrors.IsConflict(err) {
 				return false, nil
@@ -72,7 +72,7 @@ func UpdateCluster(crClient versioned.Interface, cl *api.SensuCluster, maxRetrie
 
 func DeleteCluster(t *testing.T, crClient versioned.Interface, kubeClient kubernetes.Interface, cl *api.SensuCluster) error {
 	t.Logf("deleting sensu cluster: %v", cl.Name)
-	err := crClient.SensuV1beta1().SensuClusters(cl.Namespace).Delete(cl.Name, nil)
+	err := crClient.ObjectrocketV1beta1().SensuClusters(cl.Namespace).Delete(cl.Name, nil)
 	if err != nil {
 		return err
 	}

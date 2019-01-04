@@ -28,7 +28,7 @@ import (
 
 func (r *Restore) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
-		r.sensuCRCli.SensuV1beta1().RESTClient(),
+		r.sensuCRCli.ObjectrocketV1beta1().RESTClient(),
 		api.SensuRestoreResourcePlural,
 		r.namespace,
 		fields.Everything(),

@@ -17,7 +17,7 @@ metadata:
   name: {{ .Values.rbac.clusterRole }}
 rules:
 - apiGroups:
-  - sensu.io
+  - objectrocket.com
   resources:
   - sensuclusters
   - sensubackups

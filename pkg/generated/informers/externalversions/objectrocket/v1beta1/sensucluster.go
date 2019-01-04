@@ -61,13 +61,13 @@ func NewFilteredSensuClusterInformer(client versioned.Interface, namespace strin
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuClusters(namespace).List(options)
+				return client.ObjectrocketV1beta1().SensuClusters(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuClusters(namespace).Watch(options)
+				return client.ObjectrocketV1beta1().SensuClusters(namespace).Watch(options)
 			},
 		},
 		&objectrocket_v1beta1.SensuCluster{},

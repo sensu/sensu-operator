@@ -79,13 +79,13 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		response := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`
 			{
-				"apiVersion": "sensu.io/v1beta1",
+				"apiVersion": "objectrocket.com/v1beta1",
 				"items": [],
 				"kind": "SensuClusterList",
 				"metadata": {
 				  "continue": "",
 				  "resourceVersion": "3570",
-				  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters"
+				  "selfLink": "/apis/objectrocket.com/v1beta1/namespaces/default/sensuclusters"
 				}
 			  }
 `)),
@@ -94,7 +94,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		response.Header = http.Header{"Content-Type": []string{"application/json"}}
 		return response, nil
 	}
-	controller.Config.SensuCRCli.SensuV1beta1()
+	controller.Config.SensuCRCli.ObjectrocketV1beta1()
 	source = cache.NewListWatchFromClient(
 		&fakerest.RESTClient{
 			Client: fakerest.CreateHTTPClient(roundTripper),
@@ -162,14 +162,14 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		response := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`
 			{
-				"apiVersion": "sensu.io/v1beta1",
+				"apiVersion": "objectrocket.com/v1beta1",
 				"items": [
 				  {
-					"apiVersion": "sensu.io/v1beta1",
+					"apiVersion": "objectrocket.com/v1beta1",
 					"kind": "SensuCluster",
 					"metadata": {
 					  "annotations": {
-						"kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"sensu.io/v1beta1\",\"kind\":\"SensuCluster\",\"metadata\":{\"annotations\":{},\"name\":\"example-sensu-cluster\",\"namespace\":\"default\"},\"spec\":{\"size\":3,\"version\":\"2.0.0-beta.8\"}}\n"
+						"kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"objectrocket.com/v1beta1\",\"kind\":\"SensuCluster\",\"metadata\":{\"annotations\":{},\"name\":\"example-sensu-cluster\",\"namespace\":\"default\"},\"spec\":{\"size\":3,\"version\":\"2.0.0-beta.8\"}}\n"
 					  },
 					  "clusterName": "",
 					  "creationTimestamp": "2019-01-02T23:14:52Z",
@@ -177,7 +177,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 					  "name": "example-sensu-cluster",
 					  "namespace": "default",
 					  "resourceVersion": "3570",
-					  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters/example-sensu-cluster",
+					  "selfLink": "/apis/objectrocket.com/v1beta1/namespaces/default/sensuclusters/example-sensu-cluster",
 					  "uid": "358db0b6-0ee4-11e9-a33b-0800272dcccb"
 					},
 					"spec": {
@@ -219,7 +219,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 				"metadata": {
 				  "continue": "",
 				  "resourceVersion": "3570",
-				  "selfLink": "/apis/sensu.io/v1beta1/namespaces/default/sensuclusters"
+				  "selfLink": "/apis/objectrocket.com/v1beta1/namespaces/default/sensuclusters"
 				}
 			  }
 `)),
@@ -228,7 +228,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		response.Header = http.Header{"Content-Type": []string{"application/json"}}
 		return response, nil
 	}
-	controller.Config.SensuCRCli.SensuV1beta1()
+	controller.Config.SensuCRCli.ObjectrocketV1beta1()
 	source = cache.NewListWatchFromClient(
 		&fakerest.RESTClient{
 			Client: fakerest.CreateHTTPClient(roundTripper),

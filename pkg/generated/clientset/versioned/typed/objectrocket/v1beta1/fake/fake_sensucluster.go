@@ -30,13 +30,13 @@ import (
 
 // FakeSensuClusters implements SensuClusterInterface
 type FakeSensuClusters struct {
-	Fake *FakeSensuV1beta1
+	Fake *FakeObjectrocketV1beta1
 	ns   string
 }
 
-var sensuclustersResource = schema.GroupVersionResource{Group: "sensu.io", Version: "v1beta1", Resource: "sensuclusters"}
+var sensuclustersResource = schema.GroupVersionResource{Group: "objectrocket.com", Version: "v1beta1", Resource: "sensuclusters"}
 
-var sensuclustersKind = schema.GroupVersionKind{Group: "sensu.io", Version: "v1beta1", Kind: "SensuCluster"}
+var sensuclustersKind = schema.GroupVersionKind{Group: "objectrocket.com", Version: "v1beta1", Kind: "SensuCluster"}
 
 // Get takes name of the sensuCluster, and returns the corresponding sensuCluster object, and an error if there is any.
 func (c *FakeSensuClusters) Get(name string, options v1.GetOptions) (result *v1beta1.SensuCluster, err error) {

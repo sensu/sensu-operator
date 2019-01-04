@@ -25,32 +25,32 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type SensuV1beta1Interface interface {
+type ObjectrocketV1beta1Interface interface {
 	RESTClient() rest.Interface
 	SensuBackupsGetter
 	SensuClustersGetter
 	SensuRestoresGetter
 }
 
-// SensuV1beta1Client is used to interact with features provided by the sensu.io group.
-type SensuV1beta1Client struct {
+// ObjectrocketV1beta1Client is used to interact with features provided by the objectrocket.com group.
+type ObjectrocketV1beta1Client struct {
 	restClient rest.Interface
 }
 
-func (c *SensuV1beta1Client) SensuBackups(namespace string) SensuBackupInterface {
+func (c *ObjectrocketV1beta1Client) SensuBackups(namespace string) SensuBackupInterface {
 	return newSensuBackups(c, namespace)
 }
 
-func (c *SensuV1beta1Client) SensuClusters(namespace string) SensuClusterInterface {
+func (c *ObjectrocketV1beta1Client) SensuClusters(namespace string) SensuClusterInterface {
 	return newSensuClusters(c, namespace)
 }
 
-func (c *SensuV1beta1Client) SensuRestores(namespace string) SensuRestoreInterface {
+func (c *ObjectrocketV1beta1Client) SensuRestores(namespace string) SensuRestoreInterface {
 	return newSensuRestores(c, namespace)
 }
 
-// NewForConfig creates a new SensuV1beta1Client for the given config.
-func NewForConfig(c *rest.Config) (*SensuV1beta1Client, error) {
+// NewForConfig creates a new ObjectrocketV1beta1Client for the given config.
+func NewForConfig(c *rest.Config) (*ObjectrocketV1beta1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -59,12 +59,12 @@ func NewForConfig(c *rest.Config) (*SensuV1beta1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SensuV1beta1Client{client}, nil
+	return &ObjectrocketV1beta1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new SensuV1beta1Client for the given config and
+// NewForConfigOrDie creates a new ObjectrocketV1beta1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *SensuV1beta1Client {
+func NewForConfigOrDie(c *rest.Config) *ObjectrocketV1beta1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -72,9 +72,9 @@ func NewForConfigOrDie(c *rest.Config) *SensuV1beta1Client {
 	return client
 }
 
-// New creates a new SensuV1beta1Client for the given RESTClient.
-func New(c rest.Interface) *SensuV1beta1Client {
-	return &SensuV1beta1Client{c}
+// New creates a new ObjectrocketV1beta1Client for the given RESTClient.
+func New(c rest.Interface) *ObjectrocketV1beta1Client {
+	return &ObjectrocketV1beta1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -92,7 +92,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *SensuV1beta1Client) RESTClient() rest.Interface {
+func (c *ObjectrocketV1beta1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

@@ -1,4 +1,4 @@
-apiVersion: "sensu.io/v1beta1"
+apiVersion: "objectrocket.com/v1beta1"
 kind: "SensuRestore"
 metadata:
   # The restore CR name must be the same as spec.sensuCluster.name

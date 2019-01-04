@@ -30,13 +30,13 @@ import (
 
 // FakeSensuBackups implements SensuBackupInterface
 type FakeSensuBackups struct {
-	Fake *FakeSensuV1beta1
+	Fake *FakeObjectrocketV1beta1
 	ns   string
 }
 
-var sensubackupsResource = schema.GroupVersionResource{Group: "sensu.io", Version: "v1beta1", Resource: "sensubackups"}
+var sensubackupsResource = schema.GroupVersionResource{Group: "objectrocket.com", Version: "v1beta1", Resource: "sensubackups"}
 
-var sensubackupsKind = schema.GroupVersionKind{Group: "sensu.io", Version: "v1beta1", Kind: "SensuBackup"}
+var sensubackupsKind = schema.GroupVersionKind{Group: "objectrocket.com", Version: "v1beta1", Kind: "SensuBackup"}
 
 // Get takes name of the sensuBackup, and returns the corresponding sensuBackup object, and an error if there is any.
 func (c *FakeSensuBackups) Get(name string, options v1.GetOptions) (result *v1beta1.SensuBackup, err error) {

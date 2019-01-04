@@ -64,7 +64,7 @@ func (c *Controller) Start(ctx context.Context) {
 	c.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	defer c.queue.ShutDown()
 	source = cache.NewListWatchFromClient(
-		c.Config.SensuCRCli.SensuV1beta1().RESTClient(),
+		c.Config.SensuCRCli.ObjectrocketV1beta1().RESTClient(),
 		api.SensuClusterResourcePlural,
 		ns,
 		fields.Everything())

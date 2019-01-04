@@ -54,7 +54,7 @@ type sensuRestores struct {
 }
 
 // newSensuRestores returns a SensuRestores
-func newSensuRestores(c *SensuV1beta1Client, namespace string) *sensuRestores {
+func newSensuRestores(c *ObjectrocketV1beta1Client, namespace string) *sensuRestores {
 	return &sensuRestores{
 		client: c.RESTClient(),
 		ns:     namespace,

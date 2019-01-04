@@ -28,7 +28,7 @@ import (
 
 func (b *Backup) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
-		b.backupCRCli.SensuV1beta1().RESTClient(),
+		b.backupCRCli.ObjectrocketV1beta1().RESTClient(),
 		api.SensuBackupResourcePlural,
 		b.namespace,
 		fields.Everything(),

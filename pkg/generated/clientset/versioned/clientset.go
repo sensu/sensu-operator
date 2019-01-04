@@ -20,7 +20,7 @@ package versioned
 
 import (
 	glog "github.com/golang/glog"
-	sensuv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/objectrocket/v1beta1"
+	objectrocketv1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/typed/objectrocket/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -28,27 +28,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	SensuV1beta1() sensuv1beta1.SensuV1beta1Interface
+	ObjectrocketV1beta1() objectrocketv1beta1.ObjectrocketV1beta1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Sensu() sensuv1beta1.SensuV1beta1Interface
+	Objectrocket() objectrocketv1beta1.ObjectrocketV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	sensuV1beta1 *sensuv1beta1.SensuV1beta1Client
+	objectrocketV1beta1 *objectrocketv1beta1.ObjectrocketV1beta1Client
 }
 
-// SensuV1beta1 retrieves the SensuV1beta1Client
-func (c *Clientset) SensuV1beta1() sensuv1beta1.SensuV1beta1Interface {
-	return c.sensuV1beta1
+// ObjectrocketV1beta1 retrieves the ObjectrocketV1beta1Client
+func (c *Clientset) ObjectrocketV1beta1() objectrocketv1beta1.ObjectrocketV1beta1Interface {
+	return c.objectrocketV1beta1
 }
 
-// Deprecated: Sensu retrieves the default version of SensuClient.
+// Deprecated: Objectrocket retrieves the default version of ObjectrocketClient.
 // Please explicitly pick a version.
-func (c *Clientset) Sensu() sensuv1beta1.SensuV1beta1Interface {
-	return c.sensuV1beta1
+func (c *Clientset) Objectrocket() objectrocketv1beta1.ObjectrocketV1beta1Interface {
+	return c.objectrocketV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -67,7 +67,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.sensuV1beta1, err = sensuv1beta1.NewForConfig(&configShallowCopy)
+	cs.objectrocketV1beta1, err = objectrocketv1beta1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.sensuV1beta1 = sensuv1beta1.NewForConfigOrDie(c)
+	cs.objectrocketV1beta1 = objectrocketv1beta1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -93,7 +93,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.sensuV1beta1 = sensuv1beta1.New(c)
+	cs.objectrocketV1beta1 = objectrocketv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
