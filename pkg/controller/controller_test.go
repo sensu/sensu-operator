@@ -23,6 +23,31 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+type fakeIndexer struct{}
+type fakeController struct{}
+type fakeQueue struct{}
+
+func (f fakeIndexer) GetByKey(string) (interface{}, bool, error) {
+	return nil, false, nil
+}
+
+func (f fakeController) Run(stopCh <-chan struct{}) {}
+func (f fakeController) HasSynced() bool {
+	return true
+}
+
+func (f fakeQueue) Add(item interface{})  {}
+func (f fakeQueue) Done(item interface{}) {}
+func (f fakeQueue) ShutDown()             {}
+func (f fakeQueue) Get() (item interface{}, shutdown bool) {
+	return nil, true
+}
+func (f fakeQueue) Forget(interface{}) {}
+func (f fakeQueue) NumRequeues(item interface{}) int {
+	return 0
+}
+func (f fakeQueue) AddRateLimited(item interface{}) {}
+
 type InformerTestSuite struct {
 	suite.Suite
 	ctx       context.Context
@@ -54,7 +79,9 @@ func TestRunSuite(t *testing.T) {
 
 func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	var (
-		source *cache.ListWatch
+		source          *cache.ListWatch
+		clusterInformer Informer
+		assetInformer   Informer
 	)
 
 	controller := New(Config{
@@ -68,13 +95,16 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		WorkerThreads:     1,
 		ProcessingRetries: 0,
 	})
+	assetInformer.indexer = fakeIndexer{}
+	assetInformer.controller = fakeController{}
+	assetInformer.queue = fakeQueue{}
+	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
 
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
 	probe.SetReady()
 
-	controller.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	defer controller.queue.ShutDown()
+	clusterInformer.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	roundTripper := func(req *http.Request) (*http.Response, error) {
 		response := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`
@@ -107,17 +137,17 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		api.SensuClusterResourcePlural,
 		controller.Config.Namespace,
 		fields.Everything())
-	controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+	clusterInformer.indexer, clusterInformer.controller = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(new)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -125,10 +155,11 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 	}, cache.Indexers{})
+	controller.informers[api.SensuClusterResourcePlural] = &clusterInformer
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go controller.startProcessing(ctx)
 	time.Sleep(5 * time.Second)
@@ -137,7 +168,9 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 
 func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	var (
-		source *cache.ListWatch
+		source          *cache.ListWatch
+		clusterInformer Informer
+		assetInformer   Informer
 	)
 
 	controller := New(Config{
@@ -151,13 +184,15 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		WorkerThreads:     1,
 		ProcessingRetries: 0,
 	})
-
+	assetInformer.indexer = fakeIndexer{}
+	assetInformer.controller = fakeController{}
+	assetInformer.queue = fakeQueue{}
+	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
 	probe.SetReady()
 
-	controller.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	defer controller.queue.ShutDown()
+	clusterInformer.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	roundTripper := func(req *http.Request) (*http.Response, error) {
 		response := &http.Response{
 			Body: ioutil.NopCloser(bytes.NewBufferString(`
@@ -241,17 +276,17 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		api.SensuClusterResourcePlural,
 		controller.Config.Namespace,
 		fields.Everything())
-	controller.indexer, controller.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+	clusterInformer.indexer, clusterInformer.controller = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(new)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -259,11 +294,12 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
-				controller.queue.Add(key)
+				clusterInformer.queue.Add(key)
 			}
 		},
 	}, cache.Indexers{})
 	ctx, cancelFunc := context.WithCancel(context.Background())
+	controller.informers[api.SensuClusterResourcePlural] = &clusterInformer
 	go controller.startProcessing(ctx)
 	time.Sleep(5 * time.Second)
 	cancelFunc()

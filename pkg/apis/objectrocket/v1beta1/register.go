@@ -25,6 +25,9 @@ const (
 	SensuClusterResourcePlural = "sensuclusters"
 	groupName                  = "objectrocket.com"
 
+	SensuAssetResourceKind   = "SensuAsset"
+	SensuAssetResourcePlural = "sensuassets"
+
 	SensuBackupResourceKind   = "SensuBackup"
 	SensuBackupResourcePlural = "sensubackups"
 
@@ -38,6 +41,7 @@ var (
 
 	SchemeGroupVersion  = schema.GroupVersion{Group: groupName, Version: "v1beta1"}
 	SensuClusterCRDName = SensuClusterResourcePlural + "." + groupName
+	SensuAssetCRDName   = SensuAssetResourcePlural + "." + groupName
 	SensuBackupCRDName  = SensuBackupResourcePlural + "." + groupName
 	SensuRestoreCRDName = SensuRestoreResourcePlural + "." + groupName
 )
@@ -56,6 +60,7 @@ func addKnownTypes(s *runtime.Scheme) error {
 		&SensuBackupList{},
 		&SensuRestore{},
 		&SensuRestoreList{},
+		&SensuAsset{},
 	)
 	metav1.AddToGroupVersion(s, SchemeGroupVersion)
 	return nil

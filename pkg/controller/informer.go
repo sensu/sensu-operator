@@ -17,14 +17,15 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/probe"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
@@ -40,10 +41,7 @@ func init() {
 
 // Start the controller's informer to watch for custom resource update
 func (c *Controller) Start(ctx context.Context) {
-	var (
-		ns     string
-		source *cache.ListWatch
-	)
+	var ns string
 	// TODO: get rid of this init code. CRD and storage class will be managed outside of operator.
 	for {
 		err := c.initResource()
@@ -61,24 +59,56 @@ func (c *Controller) Start(ctx context.Context) {
 	} else {
 		ns = c.Config.Namespace
 	}
-	c.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	defer c.queue.ShutDown()
+	c.addInformer(ns, api.SensuClusterResourcePlural, &api.SensuCluster{})
+	c.addInformer(ns, api.SensuAssetResourcePlural, &api.SensuAsset{})
+	c.startProcessing(ctx)
+}
+
+func (c *Controller) startProcessing(ctx context.Context) {
+	var (
+		clusterController hasSynced
+		assetController   hasSynced
+	)
+	clusterController = c.informers[api.SensuClusterResourcePlural].controller
+	assetController = c.informers[api.SensuAssetResourcePlural].controller
+	go clusterController.Run(ctx.Done())
+	go assetController.Run(ctx.Done())
+	if !cache.WaitForCacheSync(ctx.Done(), clusterController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for cluster caches to sync")
+	}
+	if !cache.WaitForCacheSync(ctx.Done(), assetController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for asset caches to sync")
+	}
+	for i := 0; i < c.Config.WorkerThreads; i++ {
+		go wait.Until(c.run, time.Second, ctx.Done())
+	}
+	select {
+	case <-ctx.Done():
+	}
+}
+
+func (c *Controller) addInformer(namespace string, resourcePlural string, objType runtime.Object) {
+	var (
+		informer Informer
+		source   *cache.ListWatch
+	)
+	informer.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	source = cache.NewListWatchFromClient(
 		c.Config.SensuCRCli.ObjectrocketV1beta1().RESTClient(),
-		api.SensuClusterResourcePlural,
-		ns,
+		resourcePlural,
+		namespace,
 		fields.Everything())
-	c.indexer, c.informer = cache.NewIndexerInformer(source, &api.SensuCluster{}, 0, cache.ResourceEventHandlerFuncs{
+	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
-				c.queue.Add(key)
+				informer.queue.Add(key)
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(new)
 			if err == nil {
-				c.queue.Add(key)
+				informer.queue.Add(key)
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -86,51 +116,42 @@ func (c *Controller) Start(ctx context.Context) {
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
-				c.queue.Add(key)
+				informer.queue.Add(key)
 			}
 		},
 	}, cache.Indexers{})
-	c.startProcessing(ctx)
-}
-
-func (c *Controller) startProcessing(ctx context.Context) {
-	var (
-		cacheStopCh chan struct{}
-		untilStopCh chan struct{}
-	)
-	cacheStopCh = make(chan struct{})
-	untilStopCh = make(chan struct{})
-	infCtx, infCancel := context.WithCancel(ctx)
-	go c.informer.Run(infCtx.Done())
-	if !cache.WaitForCacheSync(infCtx.Done(), c.informer.HasSynced) {
-		c.logger.Fatal("Timed out waiting for caches to sync")
-	}
-	for i := 0; i < c.Config.WorkerThreads; i++ {
-		go wait.Until(c.run, time.Second, untilStopCh)
-	}
-	select {
-	case <-ctx.Done():
-		close(cacheStopCh)
-		close(untilStopCh)
-		infCancel()
-	}
+	c.informers[resourcePlural] = &informer
 }
 
 func (c *Controller) run() {
-	for c.processNextItem() {
-	}
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		defer c.informers[api.SensuClusterResourcePlural].queue.ShutDown()
+		for c.processNextClusterItem() {
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		defer c.informers[api.SensuAssetResourcePlural].queue.ShutDown()
+		for c.processNextAssetItem() {
+		}
+	}()
+	wg.Wait()
 }
 
-func (c *Controller) processNextItem() bool {
-	key, quit := c.queue.Get()
+func (c *Controller) processNextClusterItem() bool {
+	var clusterInformer = c.informers[api.SensuClusterResourcePlural]
+	key, quit := clusterInformer.queue.Get()
 	if quit {
 		return false
 	}
-	defer c.queue.Done(key)
-	obj, exists, err := c.indexer.GetByKey(key.(string))
+	defer clusterInformer.queue.Done(key)
+	obj, exists, err := clusterInformer.indexer.GetByKey(key.(string))
 	if err != nil {
-		if c.queue.NumRequeues(key) < c.Config.ProcessingRetries {
-			c.queue.AddRateLimited(key)
+		if clusterInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			clusterInformer.queue.AddRateLimited(key)
 			return true
 		}
 	} else {
@@ -140,7 +161,31 @@ func (c *Controller) processNextItem() bool {
 			c.onUpdateSensuClus(obj)
 		}
 	}
-	c.queue.Forget(key)
+	clusterInformer.queue.Forget(key)
+	return true
+}
+
+func (c *Controller) processNextAssetItem() bool {
+	var assetInformer = c.informers[api.SensuAssetResourcePlural]
+	key, quit := assetInformer.queue.Get()
+	if quit {
+		return false
+	}
+	defer assetInformer.queue.Done(key)
+	obj, exists, err := assetInformer.indexer.GetByKey(key.(string))
+	if err != nil {
+		if assetInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			assetInformer.queue.AddRateLimited(key)
+			return true
+		}
+	} else {
+		if !exists {
+			c.onDeleteSensuAsset(obj)
+		} else {
+			c.onUpdateSensuAsset(obj)
+		}
+	}
+	assetInformer.queue.Forget(key)
 	return true
 }
 
@@ -201,6 +246,18 @@ func (c *Controller) syncSensuClus(clus *api.SensuCluster) {
 		c.logger.Warningf("fail to handle event: %v", err)
 	}
 	pt.stop()
+}
+
+func (c *Controller) onUpdateSensuAsset(newObj interface{}) {
+	c.syncSensuAsset(newObj.(*api.SensuCluster))
+}
+
+func (c *Controller) onDeleteSensuAsset(obj interface{}) {
+	//TODO: Implement
+}
+
+func (c *Controller) syncSensuAsset(clus *api.SensuCluster) {
+	//TODO: Implement
 }
 
 func (c *Controller) managed(clus *api.SensuCluster) bool {
