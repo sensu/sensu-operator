@@ -61,6 +61,7 @@ func addKnownTypes(s *runtime.Scheme) error {
 		&SensuRestore{},
 		&SensuRestoreList{},
 		&SensuAsset{},
+		&SensuAssetList{},
 	)
 	metav1.AddToGroupVersion(s, SchemeGroupVersion)
 	return nil

@@ -249,15 +249,17 @@ func (c *Controller) syncSensuClus(clus *api.SensuCluster) {
 }
 
 func (c *Controller) onUpdateSensuAsset(newObj interface{}) {
-	c.syncSensuAsset(newObj.(*api.SensuCluster))
+	c.syncSensuAsset(newObj.(*api.SensuAsset))
 }
 
 func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 	//TODO: Implement
+	c.logger.Warnf("Deleting SensuAssets not implemented.  Not deleting: %v", obj)
 }
 
-func (c *Controller) syncSensuAsset(clus *api.SensuCluster) {
+func (c *Controller) syncSensuAsset(clus *api.SensuAsset) {
 	//TODO: Implement
+	c.logger.Warnf("Syncing SensuAssets not implemented.  Not syncing: %v", obj)
 }
 
 func (c *Controller) managed(clus *api.SensuCluster) bool {

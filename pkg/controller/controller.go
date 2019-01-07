@@ -161,7 +161,7 @@ func (c *Controller) initCRD() error {
 	if err != nil {
 		return fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
 	}
-	err = k8sutil.CreateCRD(c.KubeExtCli, api.SensuAssetCRDName, api.SensuAssetResourceKind, api.SensuAssetResourcePlural, "sensu")
+	err = k8sutil.CreateCRD(c.KubeExtCli, api.SensuAssetCRDName, api.SensuAssetResourceKind, api.SensuAssetResourcePlural, "sensuasset")
 	if err != nil {
 		return fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
 	}
