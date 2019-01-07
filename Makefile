@@ -2,7 +2,7 @@ export GOBIN := $(PWD)/bin
 export PATH := $(GOBIN):$(PATH)
 export INSTALL_FLAG=
 
-IMAGE?=objectrocket/sensu-operator:v0.0.5
+IMAGE?=objectrocket/sensu-operator:v0.0.1
 DOCKER_IMAGE = sensu-operator
 
 .PHONY: all
