@@ -28,14 +28,6 @@ type FakeObjectrocketV1beta1 struct {
 	*testing.Fake
 }
 
-func (c *FakeObjectrocketV1beta1) CheckConfigs(namespace string) v1beta1.CheckConfigInterface {
-	return &FakeCheckConfigs{c, namespace}
-}
-
-func (c *FakeObjectrocketV1beta1) HandlerSockets(namespace string) v1beta1.HandlerSocketInterface {
-	return &FakeHandlerSockets{c, namespace}
-}
-
 func (c *FakeObjectrocketV1beta1) SensuAssets(namespace string) v1beta1.SensuAssetInterface {
 	return &FakeSensuAssets{c, namespace}
 }

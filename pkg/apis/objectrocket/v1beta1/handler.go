@@ -47,24 +47,9 @@ type SensuHandler struct {
 	RuntimeAssets     string        `json:"runtimeAssets"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// SensuHandlerList is a list of sensu handlers.
-type HandlerSocketList struct {
-	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata
-	// More info: http://releases.k8s.io/HEAD/docs/devel/api-conventions.md#metadata
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HandlerSocket `json:"items"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +k8s:deepcopy-gen=false
 // HandlerSocket is the socket description of a sensu handler.
 type HandlerSocket struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Host              string `json:"host"`
-	Port              uint32 `json:"port"`
+	Host string `json:"host"`
+	Port uint32 `json:"port"`
 }

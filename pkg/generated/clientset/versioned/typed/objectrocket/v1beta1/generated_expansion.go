@@ -18,10 +18,6 @@ limitations under the License.
 
 package v1beta1
 
-type CheckConfigExpansion interface{}
-
-type HandlerSocketExpansion interface{}
-
 type SensuAssetExpansion interface{}
 
 type SensuBackupExpansion interface{}

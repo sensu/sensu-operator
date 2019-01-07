@@ -85,7 +85,7 @@ func Test_newSensuServiceManifest(t *testing.T) {
 				"testCluster",
 				"127.0.0.1",
 				[]v1.ServicePort{
-					v1.ServicePort{
+					{
 						Name:     "dashboard",
 						Protocol: "tcp",
 						Port:     int32(3000),
@@ -106,7 +106,7 @@ func Test_newSensuServiceManifest(t *testing.T) {
 				},
 				Spec: v1.ServiceSpec{
 					Ports: []v1.ServicePort{
-						v1.ServicePort{
+						{
 							Name:     "dashboard",
 							Protocol: "tcp",
 							Port:     int32(3000),
