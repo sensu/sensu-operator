@@ -28,6 +28,14 @@ type FakeObjectrocketV1beta1 struct {
 	*testing.Fake
 }
 
+func (c *FakeObjectrocketV1beta1) CheckConfigs(namespace string) v1beta1.CheckConfigInterface {
+	return &FakeCheckConfigs{c, namespace}
+}
+
+func (c *FakeObjectrocketV1beta1) HandlerSockets(namespace string) v1beta1.HandlerSocketInterface {
+	return &FakeHandlerSockets{c, namespace}
+}
+
 func (c *FakeObjectrocketV1beta1) SensuAssets(namespace string) v1beta1.SensuAssetInterface {
 	return &FakeSensuAssets{c, namespace}
 }
@@ -38,6 +46,10 @@ func (c *FakeObjectrocketV1beta1) SensuBackups(namespace string) v1beta1.SensuBa
 
 func (c *FakeObjectrocketV1beta1) SensuClusters(namespace string) v1beta1.SensuClusterInterface {
 	return &FakeSensuClusters{c, namespace}
+}
+
+func (c *FakeObjectrocketV1beta1) SensuHandlers(namespace string) v1beta1.SensuHandlerInterface {
+	return &FakeSensuHandlers{c, namespace}
 }
 
 func (c *FakeObjectrocketV1beta1) SensuRestores(namespace string) v1beta1.SensuRestoreInterface {

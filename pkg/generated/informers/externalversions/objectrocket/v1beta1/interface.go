@@ -24,12 +24,18 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// CheckConfigs returns a CheckConfigInformer.
+	CheckConfigs() CheckConfigInformer
+	// HandlerSockets returns a HandlerSocketInformer.
+	HandlerSockets() HandlerSocketInformer
 	// SensuAssets returns a SensuAssetInformer.
 	SensuAssets() SensuAssetInformer
 	// SensuBackups returns a SensuBackupInformer.
 	SensuBackups() SensuBackupInformer
 	// SensuClusters returns a SensuClusterInformer.
 	SensuClusters() SensuClusterInformer
+	// SensuHandlers returns a SensuHandlerInformer.
+	SensuHandlers() SensuHandlerInformer
 	// SensuRestores returns a SensuRestoreInformer.
 	SensuRestores() SensuRestoreInformer
 }
@@ -45,6 +51,16 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// CheckConfigs returns a CheckConfigInformer.
+func (v *version) CheckConfigs() CheckConfigInformer {
+	return &checkConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// HandlerSockets returns a HandlerSocketInformer.
+func (v *version) HandlerSockets() HandlerSocketInformer {
+	return &handlerSocketInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // SensuAssets returns a SensuAssetInformer.
 func (v *version) SensuAssets() SensuAssetInformer {
 	return &sensuAssetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -58,6 +74,11 @@ func (v *version) SensuBackups() SensuBackupInformer {
 // SensuClusters returns a SensuClusterInformer.
 func (v *version) SensuClusters() SensuClusterInformer {
 	return &sensuClusterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// SensuHandlers returns a SensuHandlerInformer.
+func (v *version) SensuHandlers() SensuHandlerInformer {
+	return &sensuHandlerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SensuRestores returns a SensuRestoreInformer.

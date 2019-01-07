@@ -53,12 +53,18 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=objectrocket.com, Version=v1beta1
+	case v1beta1.SchemeGroupVersion.WithResource("checkconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().CheckConfigs().Informer()}, nil
+	case v1beta1.SchemeGroupVersion.WithResource("handlersockets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().HandlerSockets().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensuassets"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuAssets().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensubackups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuBackups().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensuclusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuClusters().Informer()}, nil
+	case v1beta1.SchemeGroupVersion.WithResource("sensuhandlers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuHandlers().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensurestores"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuRestores().Informer()}, nil
 

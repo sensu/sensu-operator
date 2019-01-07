@@ -18,6 +18,22 @@ limitations under the License.
 
 package v1beta1
 
+// CheckConfigListerExpansion allows custom methods to be added to
+// CheckConfigLister.
+type CheckConfigListerExpansion interface{}
+
+// CheckConfigNamespaceListerExpansion allows custom methods to be added to
+// CheckConfigNamespaceLister.
+type CheckConfigNamespaceListerExpansion interface{}
+
+// HandlerSocketListerExpansion allows custom methods to be added to
+// HandlerSocketLister.
+type HandlerSocketListerExpansion interface{}
+
+// HandlerSocketNamespaceListerExpansion allows custom methods to be added to
+// HandlerSocketNamespaceLister.
+type HandlerSocketNamespaceListerExpansion interface{}
+
 // SensuAssetListerExpansion allows custom methods to be added to
 // SensuAssetLister.
 type SensuAssetListerExpansion interface{}
@@ -41,6 +57,14 @@ type SensuClusterListerExpansion interface{}
 // SensuClusterNamespaceListerExpansion allows custom methods to be added to
 // SensuClusterNamespaceLister.
 type SensuClusterNamespaceListerExpansion interface{}
+
+// SensuHandlerListerExpansion allows custom methods to be added to
+// SensuHandlerLister.
+type SensuHandlerListerExpansion interface{}
+
+// SensuHandlerNamespaceListerExpansion allows custom methods to be added to
+// SensuHandlerNamespaceLister.
+type SensuHandlerNamespaceListerExpansion interface{}
 
 // SensuRestoreListerExpansion allows custom methods to be added to
 // SensuRestoreLister.
