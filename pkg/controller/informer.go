@@ -257,7 +257,7 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 	c.logger.Warnf("Deleting SensuAssets not implemented.  Not deleting: %v", obj)
 }
 
-func (c *Controller) syncSensuAsset(clus *api.SensuAsset) {
+func (c *Controller) syncSensuAsset(obj *api.SensuAsset) {
 	//TODO: Implement
 	c.logger.Warnf("Syncing SensuAssets not implemented.  Not syncing: %v", obj)
 }
