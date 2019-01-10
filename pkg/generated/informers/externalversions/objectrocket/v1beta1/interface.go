@@ -28,6 +28,8 @@ type Interface interface {
 	SensuAssets() SensuAssetInformer
 	// SensuBackups returns a SensuBackupInformer.
 	SensuBackups() SensuBackupInformer
+	// SensuCheckConfigs returns a SensuCheckConfigInformer.
+	SensuCheckConfigs() SensuCheckConfigInformer
 	// SensuClusters returns a SensuClusterInformer.
 	SensuClusters() SensuClusterInformer
 	// SensuHandlers returns a SensuHandlerInformer.
@@ -55,6 +57,11 @@ func (v *version) SensuAssets() SensuAssetInformer {
 // SensuBackups returns a SensuBackupInformer.
 func (v *version) SensuBackups() SensuBackupInformer {
 	return &sensuBackupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// SensuCheckConfigs returns a SensuCheckConfigInformer.
+func (v *version) SensuCheckConfigs() SensuCheckConfigInformer {
+	return &sensuCheckConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SensuClusters returns a SensuClusterInformer.

@@ -29,6 +29,7 @@ type ObjectrocketV1beta1Interface interface {
 	RESTClient() rest.Interface
 	SensuAssetsGetter
 	SensuBackupsGetter
+	SensuCheckConfigsGetter
 	SensuClustersGetter
 	SensuHandlersGetter
 	SensuRestoresGetter
@@ -45,6 +46,10 @@ func (c *ObjectrocketV1beta1Client) SensuAssets(namespace string) SensuAssetInte
 
 func (c *ObjectrocketV1beta1Client) SensuBackups(namespace string) SensuBackupInterface {
 	return newSensuBackups(c, namespace)
+}
+
+func (c *ObjectrocketV1beta1Client) SensuCheckConfigs(namespace string) SensuCheckConfigInterface {
+	return newSensuCheckConfigs(c, namespace)
 }
 
 func (c *ObjectrocketV1beta1Client) SensuClusters(namespace string) SensuClusterInterface {

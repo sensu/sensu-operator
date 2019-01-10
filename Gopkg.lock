@@ -236,6 +236,12 @@
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "ae18d6b8b3205b561c79e8e5f69bff09736185f4"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/pborman/uuid"
   packages = ["."]
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
@@ -325,6 +331,7 @@
     "cli/elements/globals",
     "js",
     "types",
+    "util/path",
     "util/strings"
   ]
   revision = "d1d0214bc20eb8bf5b2cdd4b8990064a1e3ba7ea"
@@ -429,6 +436,24 @@
   name = "golang.org/x/time"
   packages = ["rate"]
   revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "go/gcexportdata",
+    "go/internal/cgo",
+    "go/internal/gcimporter",
+    "go/internal/packagesdriver",
+    "go/packages",
+    "go/types/typeutil",
+    "imports",
+    "internal/fastwalk",
+    "internal/gopathwalk",
+    "internal/semver"
+  ]
+  revision = "aa033095749b3c5414cb40cb5fb235173be6b186"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -713,6 +738,56 @@
   version = "v7.0.0"
 
 [[projects]]
+  branch = "release-1.11"
+  name = "k8s.io/code-generator"
+  packages = [
+    "cmd/client-gen",
+    "cmd/client-gen/args",
+    "cmd/client-gen/generators",
+    "cmd/client-gen/generators/fake",
+    "cmd/client-gen/generators/scheme",
+    "cmd/client-gen/generators/util",
+    "cmd/client-gen/path",
+    "cmd/client-gen/types",
+    "cmd/conversion-gen",
+    "cmd/conversion-gen/args",
+    "cmd/conversion-gen/generators",
+    "cmd/deepcopy-gen",
+    "cmd/deepcopy-gen/args",
+    "cmd/defaulter-gen",
+    "cmd/defaulter-gen/args",
+    "cmd/informer-gen",
+    "cmd/informer-gen/args",
+    "cmd/informer-gen/generators",
+    "cmd/lister-gen",
+    "cmd/lister-gen/args",
+    "cmd/lister-gen/generators",
+    "pkg/util"
+  ]
+  revision = "f8cba74510f397bac80157a6c4ccb0ffbc31b9d0"
+
+[[projects]]
+  branch = "master"
+  name = "k8s.io/gengo"
+  packages = [
+    "args",
+    "examples/deepcopy-gen/generators",
+    "examples/defaulter-gen/generators",
+    "examples/set-gen/sets",
+    "generator",
+    "namer",
+    "parser",
+    "types"
+  ]
+  revision = "fd15ee9cc2f77baa4f31e59e6acbf21146455073"
+
+[[projects]]
+  name = "k8s.io/klog"
+  packages = ["."]
+  revision = "a5bc97fbc634d635061f3146511332c7e313a55a"
+  version = "v0.1.0"
+
+[[projects]]
   name = "k8s.io/kube-openapi"
   packages = ["pkg/util/proto"]
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
@@ -720,6 +795,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fe3dfc67f2deecf75b4855f5dd0308e1fae0f158fe8e9aeb79285b4aeb487ce9"
+  inputs-digest = "cff5b379a102a8570f4ecbe853dac9046e12c830af4e61d9bd9573933d71af20"
   solver-name = "gps-cdcl"
   solver-version = 1

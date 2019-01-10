@@ -23,7 +23,14 @@
 #   non-go = false
 #   go-tests = true
 #   unused-packages = true
-
+required = [
+  "k8s.io/code-generator/cmd/client-gen",
+  "k8s.io/code-generator/cmd/conversion-gen",
+  "k8s.io/code-generator/cmd/deepcopy-gen",
+  "k8s.io/code-generator/cmd/defaulter-gen",
+  "k8s.io/code-generator/cmd/informer-gen",
+  "k8s.io/code-generator/cmd/lister-gen",
+]
 
 [[constraint]]
   name = "github.com/pborman/uuid"
@@ -53,6 +60,14 @@
   go-tests = true
   unused-packages = true
 
+  [[prune.project]]
+    name = "k8s.io/code-generator"
+    unused-packages = false
+
 [[constraint]]
   name = "github.com/sensu/sensu-go"
   branch = "master"
+
+[[constraint]]
+  branch = "release-1.11"
+  name = "k8s.io/code-generator"

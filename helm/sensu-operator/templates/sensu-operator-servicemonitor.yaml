@@ -1,0 +1,20 @@
+{{ if .Values.prometheus.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-sensu-operator-stats
+  namespace: {{ .Release.Namespace }}
+  labels:
+    prometheus: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sensu-operator.name" . }}
+      release: {{ .Release.Name }}
+      name: {{ template "sensu-operator.fullname" . }}
+  endpoints:
+  - port: http
+  namespaceSelector:
+    any: true
+{{ end }}
