@@ -21,7 +21,7 @@ package v1beta1
 import (
 	time "time"
 
-	sensu_v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	sensu_v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	versioned "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
 	v1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/listers/sensu/v1beta1"
@@ -61,13 +61,13 @@ func NewFilteredSensuRestoreInformer(client versioned.Interface, namespace strin
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuRestores(namespace).List(options)
+				return client.ObjectrocketV1beta1().SensuRestores(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SensuV1beta1().SensuRestores(namespace).Watch(options)
+				return client.ObjectrocketV1beta1().SensuRestores(namespace).Watch(options)
 			},
 		},
 		&sensu_v1beta1.SensuRestore{},

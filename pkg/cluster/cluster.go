@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
@@ -31,7 +31,7 @@ import (
 
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -461,7 +461,7 @@ func (c *Cluster) updateCRStatus() error {
 
 	newCluster := c.cluster
 	newCluster.Status = c.status
-	newCluster, err := c.config.SensuCRCli.SensuV1beta1().SensuClusters(c.cluster.Namespace).Update(c.cluster)
+	newCluster, err := c.config.SensuCRCli.ObjectrocketV1beta1().SensuClusters(c.cluster.Namespace).Update(c.cluster)
 	if err != nil {
 		return fmt.Errorf("failed to update CR status: %v", err)
 	}
@@ -487,7 +487,7 @@ func (c *Cluster) reportFailedStatus() {
 			return false, nil
 		}
 
-		cl, err := c.config.SensuCRCli.SensuV1beta1().SensuClusters(c.cluster.Namespace).
+		cl, err := c.config.SensuCRCli.ObjectrocketV1beta1().SensuClusters(c.cluster.Namespace).
 			Get(c.cluster.Name, metav1.GetOptions{})
 		if err != nil {
 			// Update (PUT) will return conflict even if object is deleted since we have UID set in object.

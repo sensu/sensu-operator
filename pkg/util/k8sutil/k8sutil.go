@@ -23,13 +23,13 @@ import (
 	"strings"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 	"github.com/pborman/uuid"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +66,7 @@ const (
 	defaultBusyboxImage = "busybox:1.28.0-glibc"
 
 	// AnnotationScope annotation name for defining instance scope. Used for specifing cluster wide clusters.
-	AnnotationScope = "sensu.io/scope"
+	AnnotationScope = "objectrocket.com/scope"
 	//AnnotationClusterWide annotation value for cluster wide clusters.
 	AnnotationClusterWide = "clusterwide"
 

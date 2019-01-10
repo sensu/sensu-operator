@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The sensu-operator Authors
+Copyright 2019 The sensu-operator Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -52,13 +52,15 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=sensu.io, Version=v1beta1
+	// Group=objectrocket.com, Version=v1beta1
+	case v1beta1.SchemeGroupVersion.WithResource("sensuassets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuAssets().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensubackups"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Sensu().V1beta1().SensuBackups().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuBackups().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensuclusters"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Sensu().V1beta1().SensuClusters().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuClusters().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensurestores"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Sensu().V1beta1().SensuRestores().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuRestores().Informer()}, nil
 
 	}
 

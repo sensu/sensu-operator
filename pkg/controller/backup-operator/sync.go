@@ -19,7 +19,7 @@ import (
 	"errors"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/constants"
 
 	"github.com/sirupsen/logrus"
@@ -86,7 +86,7 @@ func (b *Backup) reportBackupStatus(bs *api.BackupStatus, berr error, eb *api.Se
 		eb.Status.EtcdRevision = bs.EtcdRevision
 		eb.Status.EtcdVersion = bs.EtcdVersion
 	}
-	_, err := b.backupCRCli.SensuV1beta1().SensuBackups(b.namespace).Update(eb)
+	_, err := b.backupCRCli.ObjectrocketV1beta1().SensuBackups(b.namespace).Update(eb)
 	if err != nil {
 		b.logger.Warningf("failed to update status of backup CR %v : (%v)", eb.Name, err)
 	}

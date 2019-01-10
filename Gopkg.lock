@@ -89,13 +89,20 @@
 [[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "782f4967f2dc4564575ca782fe2d04090b5faca8"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
   revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
   version = "v3.2.0"
+
+[[projects]]
+  name = "github.com/echlebek/timeproxy"
+  packages = ["."]
+  revision = "d7c2918981322d4d437f7a52f3a15c7ec5a4f488"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/ghodss/yaml"
@@ -122,7 +129,8 @@
     "protoc-gen-gogo/descriptor",
     "sortkeys"
   ]
-  revision = "117892bf1866fbaa2318c03e50e40564c8845457"
+  revision = "4cbf7e384e768b4e01799441fdf2a706a5635ae7"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/golang/glog"
@@ -198,6 +206,12 @@
   revision = "f7279a603edee96fe7764d3de9c6ff8cf9970994"
 
 [[projects]]
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -234,6 +248,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/prometheus/client_golang"
   packages = ["prometheus"]
   revision = "c5b7fccd204277076155f10851dad72b76a49317"
@@ -267,6 +287,20 @@
   revision = "61aaa706c6d4fda9365b6273c96839eb7e27f6e4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/robertkrimen/otto"
+  packages = [
+    ".",
+    "ast",
+    "dbg",
+    "file",
+    "parser",
+    "registry",
+    "token"
+  ]
+  revision = "15f95af6e78dcd2030d8195a138bd88d4f403546"
+
+[[projects]]
   name = "github.com/robfig/cron"
   packages = ["."]
   revision = "2315d5715e36303a941d907f038da7f7c44c773b"
@@ -278,33 +312,33 @@
   version = "v1.2.0"
 
 [[projects]]
-  name = "github.com/sensu/govaluate"
-  packages = ["."]
-  revision = "43cb04169dc67512be53aafaad8fbacf9fa3af9f"
-  version = "v3.1.0"
-
-[[projects]]
+  branch = "master"
   name = "github.com/sensu/sensu-go"
   packages = [
+    "api/core/v2",
+    "cli",
     "cli/client",
     "cli/client/config",
     "cli/client/config/basic",
     "cli/commands/flags",
     "cli/commands/helpers",
     "cli/elements/globals",
+    "js",
     "types",
-    "types/dynamic",
-    "util/eval",
     "util/strings"
   ]
-  revision = "2a7f0d799a2c2ef539bab7261ac229b9d9ad3cef"
-  version = "2.0.0-beta.3-1"
+  revision = "d1d0214bc20eb8bf5b2cdd4b8990064a1e3ba7ea"
+
+[[projects]]
+  name = "github.com/sensu/yaml"
+  packages = ["."]
+  revision = "704b36ea12f40d32ffe6bd109c2ddc894af28dde"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -314,8 +348,18 @@
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "require",
+    "suite"
+  ]
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -457,6 +501,15 @@
   version = "v0.9.0"
 
 [[projects]]
+  name = "gopkg.in/sourcemap.v1"
+  packages = [
+    ".",
+    "base64vlq"
+  ]
+  revision = "6e83acea0053641eff084973fee085f0c193c61a"
+  version = "v1.0.5"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -503,8 +556,10 @@
     "pkg/apis/apiextensions",
     "pkg/apis/apiextensions/v1beta1",
     "pkg/client/clientset/clientset",
+    "pkg/client/clientset/clientset/fake",
     "pkg/client/clientset/clientset/scheme",
-    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1",
+    "pkg/client/clientset/clientset/typed/apiextensions/v1beta1/fake"
   ]
   revision = "750feebe2038bad00fdf68ba37c31f62c4f1f891"
   version = "kubernetes-1.10.0"
@@ -564,41 +619,71 @@
     "discovery",
     "discovery/fake",
     "kubernetes",
+    "kubernetes/fake",
     "kubernetes/scheme",
     "kubernetes/typed/admissionregistration/v1alpha1",
+    "kubernetes/typed/admissionregistration/v1alpha1/fake",
     "kubernetes/typed/admissionregistration/v1beta1",
+    "kubernetes/typed/admissionregistration/v1beta1/fake",
     "kubernetes/typed/apps/v1",
+    "kubernetes/typed/apps/v1/fake",
     "kubernetes/typed/apps/v1beta1",
+    "kubernetes/typed/apps/v1beta1/fake",
     "kubernetes/typed/apps/v1beta2",
+    "kubernetes/typed/apps/v1beta2/fake",
     "kubernetes/typed/authentication/v1",
+    "kubernetes/typed/authentication/v1/fake",
     "kubernetes/typed/authentication/v1beta1",
+    "kubernetes/typed/authentication/v1beta1/fake",
     "kubernetes/typed/authorization/v1",
+    "kubernetes/typed/authorization/v1/fake",
     "kubernetes/typed/authorization/v1beta1",
+    "kubernetes/typed/authorization/v1beta1/fake",
     "kubernetes/typed/autoscaling/v1",
+    "kubernetes/typed/autoscaling/v1/fake",
     "kubernetes/typed/autoscaling/v2beta1",
+    "kubernetes/typed/autoscaling/v2beta1/fake",
     "kubernetes/typed/batch/v1",
+    "kubernetes/typed/batch/v1/fake",
     "kubernetes/typed/batch/v1beta1",
+    "kubernetes/typed/batch/v1beta1/fake",
     "kubernetes/typed/batch/v2alpha1",
+    "kubernetes/typed/batch/v2alpha1/fake",
     "kubernetes/typed/certificates/v1beta1",
+    "kubernetes/typed/certificates/v1beta1/fake",
     "kubernetes/typed/core/v1",
+    "kubernetes/typed/core/v1/fake",
     "kubernetes/typed/events/v1beta1",
+    "kubernetes/typed/events/v1beta1/fake",
     "kubernetes/typed/extensions/v1beta1",
+    "kubernetes/typed/extensions/v1beta1/fake",
     "kubernetes/typed/networking/v1",
+    "kubernetes/typed/networking/v1/fake",
     "kubernetes/typed/policy/v1beta1",
+    "kubernetes/typed/policy/v1beta1/fake",
     "kubernetes/typed/rbac/v1",
+    "kubernetes/typed/rbac/v1/fake",
     "kubernetes/typed/rbac/v1alpha1",
+    "kubernetes/typed/rbac/v1alpha1/fake",
     "kubernetes/typed/rbac/v1beta1",
+    "kubernetes/typed/rbac/v1beta1/fake",
     "kubernetes/typed/scheduling/v1alpha1",
+    "kubernetes/typed/scheduling/v1alpha1/fake",
     "kubernetes/typed/settings/v1alpha1",
+    "kubernetes/typed/settings/v1alpha1/fake",
     "kubernetes/typed/storage/v1",
+    "kubernetes/typed/storage/v1/fake",
     "kubernetes/typed/storage/v1alpha1",
+    "kubernetes/typed/storage/v1alpha1/fake",
     "kubernetes/typed/storage/v1beta1",
+    "kubernetes/typed/storage/v1beta1/fake",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/version",
     "plugin/pkg/client/auth/exec",
     "plugin/pkg/client/auth/gcp",
     "rest",
+    "rest/fake",
     "rest/watch",
     "testing",
     "third_party/forked/golang/template",
@@ -635,6 +720,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "faae2ec08f945d51b2d0173062284b0e0dda9ef3ab5d9823d44fb1c350ebb6e1"
+  inputs-digest = "fe3dfc67f2deecf75b4855f5dd0308e1fae0f158fe8e9aeb79285b4aeb487ce9"
   solver-name = "gps-cdcl"
   solver-version = 1

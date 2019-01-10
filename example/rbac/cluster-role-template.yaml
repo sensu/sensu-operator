@@ -4,11 +4,12 @@ metadata:
   name: <ROLE_NAME>
 rules:
 - apiGroups:
-  - sensu.io
+  - objectrocket.com
   resources:
   - sensuclusters
   - sensubackups
   - sensurestores
+  - sensuassets
   verbs:
   - "*"
 - apiGroups:

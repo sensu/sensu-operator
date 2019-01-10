@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/cluster"
 	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
-
+	sensucli "github.com/sensu/sensu-go/cli"
 	"github.com/sirupsen/logrus"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kwatch "k8s.io/apimachinery/pkg/watch"
@@ -36,29 +36,61 @@ type Event struct {
 	Object *api.SensuCluster
 }
 
+type getByKey interface {
+	GetByKey(key string) (item interface{}, exists bool, err error)
+}
+
+type hasSynced interface {
+	Run(stopCh <-chan struct{})
+	HasSynced() bool
+}
+
+type rateLimitedQueue interface {
+	Add(item interface{})
+	Done(item interface{})
+	ShutDown()
+	Get() (item interface{}, shutdown bool)
+	Forget(item interface{})
+	NumRequeues(item interface{}) int
+	AddRateLimited(item interface{})
+}
+
+type Informer struct {
+	indexer    getByKey
+	controller hasSynced
+	queue      rateLimitedQueue
+}
+
 type Controller struct {
 	logger *logrus.Entry
 	Config
-
-	clusters map[string]*cluster.Cluster
+	informers map[string]*Informer
+	clusters  map[string]*cluster.Cluster
 }
 
 type Config struct {
-	Namespace      string
-	ClusterWide    bool
-	ServiceAccount string
-	KubeCli        kubernetes.Interface
-	KubeExtCli     apiextensionsclient.Interface
-	SensuCRCli     versioned.Interface
-	CreateCRD      bool
+	Namespace         string
+	ClusterWide       bool
+	ServiceAccount    string
+	KubeCli           kubernetes.Interface
+	KubeExtCli        apiextensionsclient.Interface
+	SensuCRCli        versioned.Interface
+	CreateCRD         bool
+	WorkerThreads     int
+	ProcessingRetries int
+	ResyncPeriod      time.Duration
+}
+
+func clientForCluster(name string) (*sensucli.SensuCli, error) {
+	return nil, nil
 }
 
 func New(cfg Config) *Controller {
 	return &Controller{
-		logger: logrus.WithField("pkg", "controller"),
-
-		Config:   cfg,
-		clusters: make(map[string]*cluster.Cluster),
+		logger:    logrus.WithField("pkg", "controller"),
+		informers: make(map[string]*Informer),
+		Config:    cfg,
+		clusters:  make(map[string]*cluster.Cluster),
 	}
 }
 
@@ -128,7 +160,19 @@ func (c *Controller) makeClusterConfig() cluster.Config {
 func (c *Controller) initCRD() error {
 	err := k8sutil.CreateCRD(c.KubeExtCli, api.SensuClusterCRDName, api.SensuClusterResourceKind, api.SensuClusterResourcePlural, "sensu")
 	if err != nil {
-		return fmt.Errorf("failed to create CRD: %v", err)
+		return fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
 	}
-	return k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuClusterCRDName)
+	err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuClusterCRDName)
+	if err != nil {
+		return fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
+	}
+	err = k8sutil.CreateCRD(c.KubeExtCli, api.SensuAssetCRDName, api.SensuAssetResourceKind, api.SensuAssetResourcePlural, "sensuasset")
+	if err != nil {
+		return fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
+	}
+	err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuAssetCRDName)
+	if err != nil {
+		return fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
+	}
+	return nil
 }

@@ -17,7 +17,7 @@ package controller
 import (
 	"fmt"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/backup/backupapi"
 	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
@@ -97,7 +97,7 @@ func (r *Restore) reportStatus(rerr error, er *api.SensuRestore) {
 	} else {
 		er.Status.Succeeded = true
 	}
-	_, err := r.sensuCRCli.SensuV1beta1().SensuRestores(r.namespace).Update(er)
+	_, err := r.sensuCRCli.ObjectrocketV1beta1().SensuRestores(r.namespace).Update(er)
 	if err != nil {
 		r.logger.Warningf("failed to update status of restore CR %v : (%v)", er.Name, err)
 	}
@@ -148,7 +148,7 @@ func (r *Restore) prepareSeed(er *api.SensuRestore) (err error) {
 
 	// Fetch the reference SensuCluster
 	ecRef := er.Spec.SensuCluster
-	ec, err := r.sensuCRCli.SensuV1beta1().SensuClusters(r.namespace).Get(ecRef.Name, metav1.GetOptions{})
+	ec, err := r.sensuCRCli.ObjectrocketV1beta1().SensuClusters(r.namespace).Get(ecRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get reference SensuCluster(%s/%s): %v", r.namespace, ecRef.Name, err)
 	}
@@ -157,7 +157,7 @@ func (r *Restore) prepareSeed(er *api.SensuRestore) (err error) {
 	}
 
 	// Delete reference SensuCluster
-	err = r.sensuCRCli.SensuV1beta1().SensuClusters(r.namespace).Delete(ecRef.Name, &metav1.DeleteOptions{})
+	err = r.sensuCRCli.ObjectrocketV1beta1().SensuClusters(r.namespace).Delete(ecRef.Name, &metav1.DeleteOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to delete reference SensuCluster (%s/%s): %v", r.namespace, ecRef.Name, err)
 	}
@@ -178,7 +178,7 @@ func (r *Restore) prepareSeed(er *api.SensuRestore) (err error) {
 
 	ec.Spec.Paused = true
 	ec.Status.Phase = api.ClusterPhaseRunning
-	ec, err = r.sensuCRCli.SensuV1beta1().SensuClusters(r.namespace).Create(ec)
+	ec, err = r.sensuCRCli.ObjectrocketV1beta1().SensuClusters(r.namespace).Create(ec)
 	if err != nil {
 		return fmt.Errorf("failed to create restored SensuCluster (%s/%s): %v", r.namespace, clusterName, err)
 	}
@@ -190,12 +190,12 @@ func (r *Restore) prepareSeed(er *api.SensuRestore) (err error) {
 
 	// Retry updating the sensucluster CR spec.paused=false. The sensu-operator will update the CR once so there needs to be a single retry in case of conflict
 	err = retryutil.Retry(2, 1, func() (bool, error) {
-		ec, err = r.sensuCRCli.SensuV1beta1().SensuClusters(r.namespace).Get(clusterName, metav1.GetOptions{})
+		ec, err = r.sensuCRCli.ObjectrocketV1beta1().SensuClusters(r.namespace).Get(clusterName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
 		ec.Spec.Paused = false
-		_, err = r.sensuCRCli.SensuV1beta1().SensuClusters(r.namespace).Update(ec)
+		_, err = r.sensuCRCli.ObjectrocketV1beta1().SensuClusters(r.namespace).Update(ec)
 		if err != nil {
 			if apierrors.IsConflict(err) {
 				return false, nil

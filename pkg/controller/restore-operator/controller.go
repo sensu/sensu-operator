@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -28,7 +28,7 @@ import (
 
 func (r *Restore) run(ctx context.Context) {
 	source := cache.NewListWatchFromClient(
-		r.sensuCRCli.SensuV1beta1().RESTClient(),
+		r.sensuCRCli.ObjectrocketV1beta1().RESTClient(),
 		api.SensuRestoreResourcePlural,
 		r.namespace,
 		fields.Everything(),

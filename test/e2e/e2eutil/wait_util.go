@@ -21,13 +21,13 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	"github.com/objectrocket/sensu-operator/pkg/util"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -120,7 +120,7 @@ func getVersionFromImage(image string) string {
 func waitSizeReachedWithAccept(t *testing.T, crClient versioned.Interface, size, retries int, cl *api.SensuCluster, accepts ...acceptFunc) ([]string, error) {
 	var names []string
 	err := retryutil.Retry(retryInterval, retries, func() (done bool, err error) {
-		currCluster, err := crClient.SensuV1beta1().SensuClusters(cl.Namespace).Get(cl.Name, metav1.GetOptions{})
+		currCluster, err := crClient.ObjectrocketV1beta1().SensuClusters(cl.Namespace).Get(cl.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -147,7 +147,7 @@ func waitSizeReachedWithAccept(t *testing.T, crClient versioned.Interface, size,
 func WaitUntilMembersWithNamesDeleted(t *testing.T, crClient versioned.Interface, retries int, cl *api.SensuCluster, targetNames ...string) ([]string, error) {
 	var remaining []string
 	err := retryutil.Retry(retryInterval, retries, func() (done bool, err error) {
-		currCluster, err := crClient.SensuV1beta1().SensuClusters(cl.Namespace).Get(cl.Name, metav1.GetOptions{})
+		currCluster, err := crClient.ObjectrocketV1beta1().SensuClusters(cl.Namespace).Get(cl.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

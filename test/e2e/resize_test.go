@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	api "github.com/objectrocket/sensu-operator/pkg/apis/sensu/v1beta1"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/test/e2e/e2eutil"
 	"github.com/objectrocket/sensu-operator/test/e2e/framework"
 )
