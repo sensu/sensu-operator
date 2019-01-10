@@ -59,6 +59,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuBackups().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensuclusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuClusters().Informer()}, nil
+	case v1beta1.SchemeGroupVersion.WithResource("sensuhandlers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuHandlers().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("sensurestores"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Objectrocket().V1beta1().SensuRestores().Informer()}, nil
 

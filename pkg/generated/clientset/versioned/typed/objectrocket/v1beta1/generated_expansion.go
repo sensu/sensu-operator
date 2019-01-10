@@ -24,4 +24,6 @@ type SensuBackupExpansion interface{}
 
 type SensuClusterExpansion interface{}
 
+type SensuHandlerExpansion interface{}
+
 type SensuRestoreExpansion interface{}

@@ -42,6 +42,14 @@ type SensuClusterListerExpansion interface{}
 // SensuClusterNamespaceLister.
 type SensuClusterNamespaceListerExpansion interface{}
 
+// SensuHandlerListerExpansion allows custom methods to be added to
+// SensuHandlerLister.
+type SensuHandlerListerExpansion interface{}
+
+// SensuHandlerNamespaceListerExpansion allows custom methods to be added to
+// SensuHandlerNamespaceLister.
+type SensuHandlerNamespaceListerExpansion interface{}
+
 // SensuRestoreListerExpansion allows custom methods to be added to
 // SensuRestoreLister.
 type SensuRestoreListerExpansion interface{}

@@ -40,6 +40,10 @@ func (c *FakeObjectrocketV1beta1) SensuClusters(namespace string) v1beta1.SensuC
 	return &FakeSensuClusters{c, namespace}
 }
 
+func (c *FakeObjectrocketV1beta1) SensuHandlers(namespace string) v1beta1.SensuHandlerInterface {
+	return &FakeSensuHandlers{c, namespace}
+}
+
 func (c *FakeObjectrocketV1beta1) SensuRestores(namespace string) v1beta1.SensuRestoreInterface {
 	return &FakeSensuRestores{c, namespace}
 }
