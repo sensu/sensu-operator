@@ -28,6 +28,9 @@ const (
 	SensuAssetResourceKind   = "SensuAsset"
 	SensuAssetResourcePlural = "sensuassets"
 
+    SensuCheckConfigResourceKind   = "SensuCheckConfig"
+    SensuCheckConfigResourcePlural = "sensucheckconfigs"
+
 	SensuHandlerResourceKind   = "SensuHandler"
 	SensuHandlerResourcePlural = "sensuhandlers"
 
@@ -45,6 +48,7 @@ var (
 	SchemeGroupVersion  = schema.GroupVersion{Group: groupName, Version: "v1beta1"}
 	SensuClusterCRDName = SensuClusterResourcePlural + "." + groupName
 	SensuAssetCRDName   = SensuAssetResourcePlural + "." + groupName
+    SensuCheckConfigCRDName = SensuCheckConfigResourcePlural + "." + groupName
 	SensuHandlerCRDName = SensuHandlerResourcePlural + "." + groupName
 	SensuBackupCRDName  = SensuBackupResourcePlural + "." + groupName
 	SensuRestoreCRDName = SensuRestoreResourcePlural + "." + groupName
@@ -66,6 +70,8 @@ func addKnownTypes(s *runtime.Scheme) error {
 		&SensuRestoreList{},
 		&SensuAsset{},
 		&SensuAssetList{},
+		&SensuCheckConfig{},
+		&SensuCheckConfigList{},
 		&SensuHandler{},
 		&SensuHandlerList{},
 	)

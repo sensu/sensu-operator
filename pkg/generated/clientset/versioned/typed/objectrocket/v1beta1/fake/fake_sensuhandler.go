@@ -62,7 +62,7 @@ func (c *FakeSensuHandlers) List(opts v1.ListOptions) (result *v1beta1.SensuHand
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1beta1.SensuHandlerList{}
+	list := &v1beta1.SensuHandlerList{ListMeta: obj.(*v1beta1.SensuHandlerList).ListMeta}
 	for _, item := range obj.(*v1beta1.SensuHandlerList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

@@ -34,6 +34,14 @@ type SensuBackupListerExpansion interface{}
 // SensuBackupNamespaceLister.
 type SensuBackupNamespaceListerExpansion interface{}
 
+// SensuCheckConfigListerExpansion allows custom methods to be added to
+// SensuCheckConfigLister.
+type SensuCheckConfigListerExpansion interface{}
+
+// SensuCheckConfigNamespaceListerExpansion allows custom methods to be added to
+// SensuCheckConfigNamespaceLister.
+type SensuCheckConfigNamespaceListerExpansion interface{}
+
 // SensuClusterListerExpansion allows custom methods to be added to
 // SensuClusterLister.
 type SensuClusterListerExpansion interface{}

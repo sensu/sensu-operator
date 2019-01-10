@@ -1,3 +1,4 @@
 _output/
 test/e2e/cluster
 profile.out
+*.DS_Store

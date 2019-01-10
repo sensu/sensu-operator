@@ -22,6 +22,7 @@ rules:
   - sensuclusters
   - sensubackups
   - sensurestores
+  - sensucheckconfigs
   verbs:
   - "*"
 - apiGroups:
@@ -53,3 +54,9 @@ rules:
   - secrets
   verbs:
   - get
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - "*"

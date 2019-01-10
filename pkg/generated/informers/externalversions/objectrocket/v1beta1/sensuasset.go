@@ -21,7 +21,7 @@ package v1beta1
 import (
 	time "time"
 
-	objectrocket_v1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
+	objectrocketv1beta1 "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	versioned "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/objectrocket/sensu-operator/pkg/generated/informers/externalversions/internalinterfaces"
 	v1beta1 "github.com/objectrocket/sensu-operator/pkg/generated/listers/objectrocket/v1beta1"
@@ -70,7 +70,7 @@ func NewFilteredSensuAssetInformer(client versioned.Interface, namespace string,
 				return client.ObjectrocketV1beta1().SensuAssets(namespace).Watch(options)
 			},
 		},
-		&objectrocket_v1beta1.SensuAsset{},
+		&objectrocketv1beta1.SensuAsset{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *sensuAssetInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *sensuAssetInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&objectrocket_v1beta1.SensuAsset{}, f.defaultInformer)
+	return f.factory.InformerFor(&objectrocketv1beta1.SensuAsset{}, f.defaultInformer)
 }
 
 func (f *sensuAssetInformer) Lister() v1beta1.SensuAssetLister {

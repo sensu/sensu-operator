@@ -62,7 +62,7 @@ func (c *FakeSensuClusters) List(opts v1.ListOptions) (result *v1beta1.SensuClus
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1beta1.SensuClusterList{}
+	list := &v1beta1.SensuClusterList{ListMeta: obj.(*v1beta1.SensuClusterList).ListMeta}
 	for _, item := range obj.(*v1beta1.SensuClusterList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
