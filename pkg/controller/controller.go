@@ -59,7 +59,7 @@ type rateLimitedQueue interface {
 	AddRateLimited(item interface{})
 }
 
-// Informer is a kuberntes informer that satisfies the included 3 interfaces
+// Informer is a kubernetes informer that satisfies the included 3 interfaces
 type Informer struct {
 	indexer    getByKey
 	controller hasSynced
