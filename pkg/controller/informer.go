@@ -23,8 +23,7 @@ import (
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/probe"
-	sensucli "github.com/sensu/sensu-go/cli"
-	sensutypes "github.com/sensu/sensu-go/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,7 +42,9 @@ func init() {
 
 // Start the controller's informer to watch for custom resource update
 func (c *Controller) Start(ctx context.Context) {
-	var ns string
+	var (
+		ns string
+	)
 	// TODO: get rid of this init code. CRD and storage class will be managed outside of operator.
 	for {
 		err := c.initResource()
@@ -63,23 +64,37 @@ func (c *Controller) Start(ctx context.Context) {
 	}
 	c.addInformer(ns, api.SensuClusterResourcePlural, &api.SensuCluster{})
 	c.addInformer(ns, api.SensuAssetResourcePlural, &api.SensuAsset{})
+	c.addInformer(ns, api.SensuCheckConfigResourcePlural, &api.SensuCheckConfig{})
+	c.addInformer(ns, api.SensuHandlerResourcePlural, &api.SensuHandler{})
 	c.startProcessing(ctx)
 }
 
 func (c *Controller) startProcessing(ctx context.Context) {
 	var (
-		clusterController hasSynced
-		assetController   hasSynced
+		clusterController     hasSynced
+		assetController       hasSynced
+		checkconfigController hasSynced
+		handlerController     hasSynced
 	)
 	clusterController = c.informers[api.SensuClusterResourcePlural].controller
 	assetController = c.informers[api.SensuAssetResourcePlural].controller
+	checkconfigController = c.informers[api.SensuCheckConfigResourcePlural].controller
+	handlerController = c.informers[api.SensuHandlerResourcePlural].controller
 	go clusterController.Run(ctx.Done())
 	go assetController.Run(ctx.Done())
+	go checkconfigController.Run(ctx.Done())
+	go handlerController.Run(ctx.Done())
 	if !cache.WaitForCacheSync(ctx.Done(), clusterController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for cluster caches to sync")
 	}
 	if !cache.WaitForCacheSync(ctx.Done(), assetController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for asset caches to sync")
+	}
+	if !cache.WaitForCacheSync(ctx.Done(), checkconfigController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for checkconfig caches to sync")
+	}
+	if !cache.WaitForCacheSync(ctx.Done(), handlerController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for handler caches to sync")
 	}
 	for i := 0; i < c.Config.WorkerThreads; i++ {
 		go wait.Until(c.run, time.Second, ctx.Done())
@@ -100,12 +115,15 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 		resourcePlural,
 		namespace,
 		fields.Everything())
+	// create finalizer to ensure that sensu server objects are deleted when crd is deleted
+	finalizer := cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
 	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, 0, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.logger.Warnf("Adding %v to the queue", obj)
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
 				informer.queue.Add(key)
+				finalizer.Delete(obj)
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
@@ -119,16 +137,18 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
+				finalizer.Add(obj)
 				informer.queue.Add(key)
 			}
 		},
 	}, cache.Indexers{})
 	c.informers[resourcePlural] = &informer
+	c.finalizers[resourcePlural] = finalizer
 }
 
 func (c *Controller) run() {
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(4)
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuClusterResourcePlural].queue.ShutDown()
@@ -139,6 +159,18 @@ func (c *Controller) run() {
 		defer wg.Done()
 		defer c.informers[api.SensuAssetResourcePlural].queue.ShutDown()
 		for c.processNextAssetItem() {
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		defer c.informers[api.SensuCheckConfigResourcePlural].queue.ShutDown()
+		for c.processNextCheckConfigItem() {
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		defer c.informers[api.SensuHandlerResourcePlural].queue.ShutDown()
+		for c.processNextHandlerItem() {
 		}
 	}()
 	wg.Wait()
@@ -160,6 +192,9 @@ func (c *Controller) processNextClusterItem() bool {
 	} else {
 		if !exists {
 			c.onDeleteSensuClus(obj)
+			// Finalizers do nothing with sensu clusters?
+			// TODO: verify
+			c.finalizers[api.SensuClusterResourcePlural].Delete(key)
 		} else {
 			c.onUpdateSensuClus(obj)
 		}
@@ -183,12 +218,90 @@ func (c *Controller) processNextAssetItem() bool {
 		}
 	} else {
 		if !exists {
-			c.onDeleteSensuAsset(obj)
+			_, exists, err := c.finalizers[api.SensuAssetResourcePlural].GetByKey(key.(string))
+			if exists && err != nil {
+				c.finalizers[api.SensuAssetResourcePlural].Delete(key)
+			}
 		} else {
-			c.onUpdateSensuAsset(obj)
+			if obj != nil {
+				c.onUpdateSensuAsset(obj)
+				asset := obj.(*api.SensuAsset)
+				// If asset deletion has been initiated, also delete asset from sensu cluster
+				if asset.DeletionTimestamp != nil {
+					c.onDeleteSensuAsset(obj)
+				}
+			}
 		}
 	}
 	assetInformer.queue.Forget(key)
+	return true
+}
+
+func (c *Controller) processNextCheckConfigItem() bool {
+	var checkconfigInformer = c.informers[api.SensuCheckConfigResourcePlural]
+	key, quit := checkconfigInformer.queue.Get()
+	if quit {
+		return false
+	}
+	defer checkconfigInformer.queue.Done(key)
+	obj, exists, err := checkconfigInformer.indexer.GetByKey(key.(string))
+	if err != nil {
+		if checkconfigInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			checkconfigInformer.queue.AddRateLimited(key)
+			return true
+		}
+	} else {
+		if !exists {
+			_, exists, err := c.finalizers[api.SensuCheckConfigResourcePlural].GetByKey(key.(string))
+			if exists && err != nil {
+				c.finalizers[api.SensuCheckConfigResourcePlural].Delete(key)
+			}
+		} else {
+			if obj != nil {
+				c.onUpdateSensuCheckConfig(obj)
+				checkconfig := obj.(*api.SensuCheckConfig)
+				// If checkconfig deletion has been initiated, also delete checkconfig from sensu cluster
+				if checkconfig.DeletionTimestamp != nil {
+					c.onDeleteSensuCheckConfig(obj)
+				}
+			}
+		}
+	}
+	checkconfigInformer.queue.Forget(key)
+	return true
+}
+
+func (c *Controller) processNextHandlerItem() bool {
+	var handlerInformer = c.informers[api.SensuHandlerResourcePlural]
+	key, quit := handlerInformer.queue.Get()
+	if quit {
+		return false
+	}
+	defer handlerInformer.queue.Done(key)
+	obj, exists, err := handlerInformer.indexer.GetByKey(key.(string))
+	if err != nil {
+		if handlerInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			handlerInformer.queue.AddRateLimited(key)
+			return true
+		}
+	} else {
+		if !exists {
+			_, exists, err := c.finalizers[api.SensuHandlerResourcePlural].GetByKey(key.(string))
+			if exists && err != nil {
+				c.finalizers[api.SensuHandlerResourcePlural].Delete(key)
+			}
+		} else {
+			if obj != nil {
+				c.onUpdateSensuHandler(obj.(*api.SensuHandler))
+				handler := obj.(*api.SensuHandler)
+				// If checkconfig deletion has been initiated, also delete checkconfig from sensu cluster
+				if handler.DeletionTimestamp != nil {
+					c.onDeleteSensuHandler(obj)
+				}
+			}
+		}
+	}
+	handlerInformer.queue.Forget(key)
 	return true
 }
 
@@ -249,33 +362,6 @@ func (c *Controller) syncSensuClus(clus *api.SensuCluster) {
 		c.logger.Warningf("fail to handle event: %v", err)
 	}
 	pt.stop()
-}
-
-func (c *Controller) onUpdateSensuAsset(newObj interface{}) {
-	c.syncSensuAsset(newObj.(*api.SensuAsset))
-}
-
-func (c *Controller) onDeleteSensuAsset(obj interface{}) {
-	//TODO: Implement this once it's supported by sensu
-	c.logger.Warnf("Deleting SensuAssets not implemented.  Not Deleting: %v", obj)
-}
-
-func (c *Controller) syncSensuAsset(obj *api.SensuAsset) {
-	var (
-		apiAsset *sensutypes.Asset
-		cli      *sensucli.SensuCli
-		err      error
-	)
-
-	apiAsset, err = cli.Client.FetchAsset(obj.Name)
-	if err != nil {
-		c.logger.Warnf("Error fetching asset: %v", err)
-	}
-	apiAsset = obj.ToAPISensuAsset()
-	err = cli.Client.CreateAsset(apiAsset)
-	if err != nil {
-		c.logger.Warnf("Failed to handle syncSensuAsset event: %v", err)
-	}
 }
 
 func (c *Controller) managed(clus *api.SensuCluster) bool {

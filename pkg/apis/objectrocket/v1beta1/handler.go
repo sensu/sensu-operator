@@ -52,6 +52,8 @@ type SensuHandlerSpec struct {
 	Filters       []string      `json:"filters"`
 	EnvVars       []string      `json:"envVars"`
 	RuntimeAssets []string      `json:"runtimeAssets"`
+	// Metadata contains the name, namespace, and labels of the handler
+	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
 }
 
 // HandlerSocket is the socket description of a sensu handler.
@@ -70,7 +72,7 @@ func (a SensuHandler) ToSensuType() *sensutypes.Handler {
 	return &sensutypes.Handler{
 		ObjectMeta: sensutypes.ObjectMeta{
 			Name:        a.ObjectMeta.Name,
-			Namespace:   a.ObjectMeta.Namespace,
+			Namespace:   a.Spec.SensuMetadata.Namespace,
 			Labels:      a.ObjectMeta.Labels,
 			Annotations: a.ObjectMeta.Annotations,
 		},

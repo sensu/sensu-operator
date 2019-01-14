@@ -16,6 +16,7 @@ package controller
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
@@ -27,10 +28,13 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 )
 
 var initRetryWaitTime = 30 * time.Second
 
+// Event is the cluster event that pairs the event type (add/update/delete)
+// with the sensu cluster object, and is passed through the controller
 type Event struct {
 	Type   kwatch.EventType
 	Object *api.SensuCluster
@@ -55,19 +59,24 @@ type rateLimitedQueue interface {
 	AddRateLimited(item interface{})
 }
 
+// Informer is a kuberntes informer that satisfies the included 3 interfaces
 type Informer struct {
 	indexer    getByKey
 	controller hasSynced
 	queue      rateLimitedQueue
 }
 
+// Controller is the sensu controller that handles all informers/clusters/finalizers
+// for all of the custom resources in the operator
 type Controller struct {
 	logger *logrus.Entry
 	Config
-	informers map[string]*Informer
-	clusters  map[string]*cluster.Cluster
+	informers  map[string]*Informer
+	clusters   map[string]*cluster.Cluster
+	finalizers map[string]cache.Indexer
 }
 
+// Config is the configuration for the sensu controller
 type Config struct {
 	Namespace         string
 	ClusterWide       bool
@@ -79,18 +88,22 @@ type Config struct {
 	WorkerThreads     int
 	ProcessingRetries int
 	ResyncPeriod      time.Duration
+	LogLevel          logrus.Level
 }
 
 func clientForCluster(name string) (*sensucli.SensuCli, error) {
 	return nil, nil
 }
 
+// New returns a new sensu controller
 func New(cfg Config) *Controller {
+	logrus.SetLevel(cfg.LogLevel)
 	return &Controller{
-		logger:    logrus.WithField("pkg", "controller"),
-		informers: make(map[string]*Informer),
-		Config:    cfg,
-		clusters:  make(map[string]*cluster.Cluster),
+		logger:     logrus.WithField("pkg", "controller"),
+		informers:  make(map[string]*Informer),
+		Config:     cfg,
+		clusters:   make(map[string]*cluster.Cluster),
+		finalizers: make(map[string]cache.Indexer),
 	}
 }
 
@@ -158,21 +171,77 @@ func (c *Controller) makeClusterConfig() cluster.Config {
 }
 
 func (c *Controller) initCRD() error {
-	err := k8sutil.CreateCRD(c.KubeExtCli, api.SensuClusterCRDName, api.SensuClusterResourceKind, api.SensuClusterResourcePlural, "sensu")
-	if err != nil {
-		return fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
-	}
-	err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuClusterCRDName)
-	if err != nil {
-		return fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
-	}
-	err = k8sutil.CreateCRD(c.KubeExtCli, api.SensuAssetCRDName, api.SensuAssetResourceKind, api.SensuAssetResourcePlural, "sensuasset")
-	if err != nil {
-		return fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
-	}
-	err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuAssetCRDName)
-	if err != nil {
-		return fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
-	}
-	return nil
+	var (
+		err  error
+		lock sync.Mutex
+		wg   sync.WaitGroup
+	)
+	lock = sync.Mutex{}
+	wg.Add(4)
+	go func() {
+		var localerr error
+		defer wg.Done()
+		localerr = k8sutil.CreateCRD(c.KubeExtCli, api.SensuClusterCRDName, api.SensuClusterResourceKind, api.SensuClusterResourcePlural, "sensu")
+		lock.Lock()
+		defer lock.Unlock()
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
+			return
+		}
+		err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuClusterCRDName)
+		if err != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuClusterCRDName, err)
+			return
+		}
+	}()
+	go func() {
+		var localerr error
+		defer wg.Done()
+		localerr = k8sutil.CreateCRD(c.KubeExtCli, api.SensuAssetCRDName, api.SensuAssetResourceKind, api.SensuAssetResourcePlural, "sensuasset")
+		lock.Lock()
+		defer lock.Unlock()
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
+			return
+		}
+		localerr = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuAssetCRDName)
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuAssetCRDName, err)
+			return
+		}
+	}()
+	go func() {
+		var localerr error
+		defer wg.Done()
+		localerr = k8sutil.CreateCRD(c.KubeExtCli, api.SensuCheckConfigCRDName, api.SensuCheckConfigResourceKind, api.SensuCheckConfigResourcePlural, "sensucheckconfig")
+		lock.Lock()
+		defer lock.Unlock()
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuCheckConfigCRDName, err)
+			return
+		}
+		localerr = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuCheckConfigCRDName)
+		if err != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuCheckConfigCRDName, err)
+			return
+		}
+	}()
+	go func() {
+		var localerr error
+		defer wg.Done()
+		localerr = k8sutil.CreateCRD(c.KubeExtCli, api.SensuHandlerCRDName, api.SensuHandlerResourceKind, api.SensuHandlerResourcePlural, "sensuhandler")
+		lock.Lock()
+		defer lock.Unlock()
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuHandlerCRDName, err)
+			return
+		}
+		localerr = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuHandlerCRDName)
+		if localerr != nil {
+			err = fmt.Errorf("failed to create %s CRD: %v", api.SensuHandlerCRDName, err)
+			return
+		}
+	}()
+	wg.Wait()
+	return err
 }

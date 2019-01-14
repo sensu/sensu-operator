@@ -53,7 +53,16 @@ type SensuAsset struct {
 
 	// Organization indicates to which org an asset belongs to
 	Organization string `json:"organization,omitempty"`
-	ClusterName  string `json:"clusterName"`
+	// Metadata contains the name, namespace, labels and annotations of the check
+	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
+
+	// Status is the sensu asset's status
+	Status SensuAssetStatus `json:"status"`
+}
+
+// SensuAssetStatus is the status of the sensu asset
+type SensuAssetStatus struct {
+	Accepted bool `json:"accepted"`
 }
 
 // ToAPISensuAsset returns a value of the SensuAsset type from the Sensu API
@@ -61,7 +70,7 @@ func (a SensuAsset) ToAPISensuAsset() *sensutypes.Asset {
 	return &sensutypes.Asset{
 		ObjectMeta: sensutypes.ObjectMeta{
 			Name:        a.ObjectMeta.Name,
-			Namespace:   a.ObjectMeta.Namespace,
+			Namespace:   a.SensuMetadata.Namespace,
 			Labels:      a.ObjectMeta.Labels,
 			Annotations: a.ObjectMeta.Annotations,
 		},
