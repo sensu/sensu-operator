@@ -24,7 +24,7 @@ func TestNew(t *testing.T) {
 	conf := basic.Config{
 		Cluster: basic.Cluster{
 			APIUrl:  "http://testCluster-api.testnamespace.svc:8080",
-			Edition: "enterprise",
+			Edition: types.CoreEdition,
 		},
 		Profile: basic.Profile{
 			Format:    "json",
@@ -92,7 +92,7 @@ func TestSensuClient_makeFullyQualifiedSensuClientURL(t *testing.T) {
 	conf := basic.Config{
 		Cluster: basic.Cluster{
 			APIUrl:  "http://testCluster.testnamespace.svc:8080",
-			Edition: "enterprise",
+			Edition: types.CoreEdition,
 		},
 		Profile: basic.Profile{
 			Format:    "json",
@@ -149,7 +149,7 @@ func TestSensuClient_ensureCredentials(t *testing.T) {
 	conf := basic.Config{
 		Cluster: basic.Cluster{
 			APIUrl:  "http://testCluster.testnamespace.svc:8080",
-			Edition: "enterprise",
+			Edition: types.CoreEdition,
 			Tokens: &types.Tokens{
 				Access: "fake",
 			},
@@ -162,7 +162,7 @@ func TestSensuClient_ensureCredentials(t *testing.T) {
 	confNoToken := basic.Config{
 		Cluster: basic.Cluster{
 			APIUrl:  "http://testCluster.testnamespace.svc:8080",
-			Edition: "enterprise",
+			Edition: types.CoreEdition,
 		},
 		Profile: basic.Profile{
 			Format:    "json",
