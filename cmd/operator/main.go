@@ -48,6 +48,8 @@ var (
 	name              string
 	listenAddr        string
 	gcInterval        time.Duration
+	logLevel          string
+	logrusLevel       logrus.Level
 	printVersion      bool
 	createCRD         bool
 	clusterWide       bool
@@ -57,6 +59,7 @@ var (
 
 func init() {
 	flag.StringVar(&listenAddr, "listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
+	flag.StringVar(&logLevel, "log-level", "info", "The logging level (debug/info/warn/error/none")
 	flag.BoolVar(&printVersion, "version", false, "Show version and quit")
 	flag.BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
 	flag.DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
@@ -64,6 +67,12 @@ func init() {
 	flag.IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
 	flag.IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
 	flag.Parse()
+	if level, err := logrus.ParseLevel(logLevel); err != nil {
+		logrus.Fatalf("invalid log-level %s", logLevel)
+	} else {
+		logrusLevel = level
+		logrus.SetLevel(level)
+	}
 }
 
 func main() {
@@ -158,6 +167,7 @@ func newControllerConfig() controller.Config {
 		CreateCRD:         createCRD,
 		WorkerThreads:     workerThreads,
 		ProcessingRetries: processingRetries,
+		LogLevel:          logrusLevel,
 	}
 
 	return cfg

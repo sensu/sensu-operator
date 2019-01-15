@@ -52,7 +52,7 @@ func New(clusterName, namespace string, sensuNamespace string) *SensuClient {
 	conf := basic.Config{
 		Cluster: basic.Cluster{
 			APIUrl:  fmt.Sprintf("http://%s:8080", sClient.makeFullyQualifiedSensuClientURL()),
-			Edition: types.CoreEdition,
+			Edition: "enterprise",
 		},
 		Profile: basic.Profile{
 			Format:    "json",

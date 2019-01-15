@@ -44,20 +44,24 @@ func (c *Controller) onDeleteSensuCheckConfig(obj interface{}) {
 }
 
 func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
-	c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig within sensu cluster")
+	c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+		checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.Name, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
 	err := sensuClient.UpdateCheckConfig(checkConfig)
-	c.logger.Debugf("in syncSensuCheckConfig, after update checkconfig in sensu cluster")
+	c.logger.Debugf("in syncSensuCheckConfig, after update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+		checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	if err != nil {
 		c.logger.Warningf("failed to handle checkconfig update event: %v", err)
 	}
 	if !checkConfig.Status.Accepted {
 		copy := checkConfig.DeepCopy()
 		copy.Status.Accepted = true
-		c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig status within k8s")
+		c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+			checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(copy.GetNamespace()).Update(copy); err != nil {
 			c.logger.Warningf("failed to update checkconfig's status during update event: %v", err)
 		}
-		c.logger.Debugf("in syncSensuCheckConfig, done updating checkconfig status within k8s")
+		c.logger.Debugf("in syncSensuCheckConfig, done updating checkconfig status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+			checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	}
 }

@@ -42,6 +42,10 @@ spec:
 {{- if .Values.sensu.clusterWide }}
         - -cluster-wide
 {{- end }}
+{{- if .Values.logLevel }}
+        - -log-level
+        - {{ .Values.logLevel }}
+{{- end }}
         - -logtostderr
         env:
         - name: MY_POD_NAMESPACE

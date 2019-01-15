@@ -16,6 +16,7 @@ package v1beta1
 
 import (
 	sensu_go_v2 "github.com/sensu/sensu-go/api/core/v2"
+	k8s_api_extensions_v1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -92,6 +93,8 @@ type SensuCheckConfigSpec struct {
 	EnvVars []string `json:"env_vars"`
 	// Metadata contains the name, namespace, labels and annotations of the check
 	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
+	// Validation is the OpenAPIV3Schema validation for sensu checks
+	Validation k8s_api_extensions_v1beta1.CustomResourceValidation `json:"validation,omitempty"`
 }
 
 // SensuCheckConfigStatus is the status of the sensu check config
@@ -114,7 +117,7 @@ type ProxyRequests struct {
 
 // ToSensuType will convert an objectrocket/v1betata checkconfig into
 // a sensu-go/api/core/v2 checkconfig type
-func (c *SensuCheckConfig) ToSensuType() *sensu_go_v2.CheckConfig {
+func (c SensuCheckConfig) ToSensuType() *sensu_go_v2.CheckConfig {
 	checkConfig := &sensu_go_v2.CheckConfig{
 		Command:              c.Spec.Command,
 		Handlers:             c.Spec.Handlers,
@@ -247,4 +250,29 @@ func (c *SensuCheckConfig) ToSensuType() *sensu_go_v2.CheckConfig {
 	}
 
 	return checkConfig
+}
+
+// GetCustomResourceValidation returns the asset's resource validation
+func (c SensuCheckConfig) GetCustomResourceValidation() *k8s_api_extensions_v1beta1.CustomResourceValidation {
+	minItems := int64(1)
+	return &k8s_api_extensions_v1beta1.CustomResourceValidation{
+		OpenAPIV3Schema: &k8s_api_extensions_v1beta1.JSONSchemaProps{
+			Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
+				"metadata": k8s_api_extensions_v1beta1.JSONSchemaProps{
+					Required: []string{"finalizers", "name", "namespace"},
+					Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
+						"finalizers": k8s_api_extensions_v1beta1.JSONSchemaProps{
+							Type:     "array",
+							MinItems: &minItems,
+							// This is required to be set to false, or you get error
+							// 'uniqueItems cannot be set to true since the runtime complexity becomes quadratic'
+							UniqueItems: false,
+							// MinItems by itself doesn't seem to work.
+							Required: []string{"check.finalizer.objectrocket.com"},
+						},
+					},
+				},
+			},
+		},
+	}
 }

@@ -74,7 +74,7 @@ func (b *Backup) Start(ctx context.Context) error {
 }
 
 func (b *Backup) initCRD() error {
-	err := k8sutil.CreateCRD(b.kubeExtCli, api.SensuBackupCRDName, api.SensuBackupResourceKind, api.SensuBackupResourcePlural, "")
+	err := k8sutil.CreateCRD(b.kubeExtCli, api.SensuBackupCRDName, api.SensuBackupResourceKind, api.SensuBackupResourcePlural, "", nil)
 	if err != nil {
 		return fmt.Errorf("failed to create CRD: %v", err)
 	}

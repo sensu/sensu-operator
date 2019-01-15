@@ -191,8 +191,6 @@ workflows:
             branches:
               ignore: /.*/
       - build_deploy:
-          requires:
-            - unit_test
           filters:
             tags:
               only:
@@ -203,7 +201,6 @@ workflows:
       - helm_push:
           requires:
             - build_deploy
-            - unit_test
           filters:
             tags:
               only:
