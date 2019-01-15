@@ -8,7 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/cluster"
 	fakesensu "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/fake"
 	sensuscheme "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/scheme"
 	"github.com/objectrocket/sensu-operator/pkg/util/probe"
@@ -82,6 +85,8 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		source          *cache.ListWatch
 		clusterInformer Informer
 		assetInformer   Informer
+		checkInformer   Informer
+		handlerInformer Informer
 	)
 
 	controller := New(Config{
@@ -98,7 +103,15 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	assetInformer.indexer = fakeIndexer{}
 	assetInformer.controller = fakeController{}
 	assetInformer.queue = fakeQueue{}
+	checkInformer.indexer = fakeIndexer{}
+	checkInformer.controller = fakeController{}
+	checkInformer.queue = fakeQueue{}
+	handlerInformer.indexer = fakeIndexer{}
+	handlerInformer.controller = fakeController{}
+	handlerInformer.queue = fakeQueue{}
 	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
+	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
+	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
@@ -162,7 +175,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	controller.informers[api.SensuClusterResourcePlural] = &clusterInformer
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go controller.startProcessing(ctx)
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 	cancelFunc()
 }
 
@@ -171,6 +184,8 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		source          *cache.ListWatch
 		clusterInformer Informer
 		assetInformer   Informer
+		checkInformer   Informer
+		handlerInformer Informer
 	)
 
 	controller := New(Config{
@@ -187,7 +202,15 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	assetInformer.indexer = fakeIndexer{}
 	assetInformer.controller = fakeController{}
 	assetInformer.queue = fakeQueue{}
+	checkInformer.indexer = fakeIndexer{}
+	checkInformer.controller = fakeController{}
+	checkInformer.queue = fakeQueue{}
+	handlerInformer.indexer = fakeIndexer{}
+	handlerInformer.controller = fakeController{}
+	handlerInformer.queue = fakeQueue{}
 	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
+	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
+	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
 	probe.SetReady()
@@ -302,6 +325,74 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	controller.informers[api.SensuClusterResourcePlural] = &clusterInformer
 	go controller.startProcessing(ctx)
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 	cancelFunc()
+}
+
+func TestController_initCRD(t *testing.T) {
+	var (
+		assetInformer   Informer
+		checkInformer   Informer
+		handlerInformer Informer
+	)
+	assetInformer.indexer = fakeIndexer{}
+	assetInformer.controller = fakeController{}
+	assetInformer.queue = fakeQueue{}
+	checkInformer.indexer = fakeIndexer{}
+	checkInformer.controller = fakeController{}
+	checkInformer.queue = fakeQueue{}
+	handlerInformer.indexer = fakeIndexer{}
+	handlerInformer.controller = fakeController{}
+	handlerInformer.queue = fakeQueue{}
+	type fields struct {
+		logger     *logrus.Entry
+		Config     Config
+		informers  map[string]*Informer
+		finalizers map[string]cache.Indexer
+		clusters   map[string]*cluster.Cluster
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			"test both cluster, and checkconfig crds are created, and become valid",
+			fields{
+				logrus.WithField("pkg", "test"),
+				Config{
+					Namespace:         "testns",
+					ClusterWide:       true,
+					ServiceAccount:    "testsa",
+					KubeCli:           testclient.NewSimpleClientset(),
+					KubeExtCli:        fakeapiextensionsapiserver.NewSimpleClientset(),
+					SensuCRCli:        fakesensu.NewSimpleClientset(),
+					CreateCRD:         false,
+					WorkerThreads:     1,
+					ProcessingRetries: 0,
+				},
+				map[string]*Informer{},
+				map[string]cache.Indexer{},
+				map[string]*cluster.Cluster{},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Controller{
+				logger:     tt.fields.logger,
+				Config:     tt.fields.Config,
+				informers:  tt.fields.informers,
+				finalizers: tt.fields.finalizers,
+				clusters:   tt.fields.clusters,
+			}
+			c.informers[api.SensuAssetResourcePlural] = &assetInformer
+			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
+			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
+			if err := c.initCRD(); (err != nil) != tt.wantErr {
+				t.Errorf("Controller.initCRD() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }

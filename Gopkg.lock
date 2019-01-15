@@ -236,12 +236,6 @@
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  revision = "ae18d6b8b3205b561c79e8e5f69bff09736185f4"
-  version = "v1.0.0"
-
-[[projects]]
   name = "github.com/pborman/uuid"
   packages = ["."]
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
@@ -331,7 +325,6 @@
     "cli/elements/globals",
     "js",
     "types",
-    "util/path",
     "util/strings"
   ]
   revision = "d1d0214bc20eb8bf5b2cdd4b8990064a1e3ba7ea"
@@ -795,6 +788,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cff5b379a102a8570f4ecbe853dac9046e12c830af4e61d9bd9573933d71af20"
+  inputs-digest = "648b48baabe7a41d62cb2db48f0489339a311b7dcdf52620b52e5475b6312fca"
   solver-name = "gps-cdcl"
   solver-version = 1

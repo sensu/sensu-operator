@@ -26,6 +26,8 @@ import (
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
+
+	fakediscovery "k8s.io/client-go/discovery/fake"
 )
 
 // TODO: replace this package with Operator client
@@ -77,6 +79,15 @@ func CreateCRD(clientset apiextensionsclient.Interface, crdName, rkind, rplural,
 }
 
 func WaitCRDReady(clientset apiextensionsclient.Interface, crdName string) error {
+	// If we're testing, then just assume the CRDs are ready,
+	// as they will never get status conditions in testing
+	//
+	// TODO: is there a better way to do this - mmontgomery
+	switch clientset.Discovery().(type) {
+	case *fakediscovery.FakeDiscovery:
+		return nil
+	}
+
 	err := retryutil.Retry(5*time.Second, 20, func() (bool, error) {
 		crd, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crdName, metav1.GetOptions{})
 		if err != nil {

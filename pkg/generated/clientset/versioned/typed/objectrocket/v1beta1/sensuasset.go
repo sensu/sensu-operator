@@ -37,6 +37,7 @@ type SensuAssetsGetter interface {
 type SensuAssetInterface interface {
 	Create(*v1beta1.SensuAsset) (*v1beta1.SensuAsset, error)
 	Update(*v1beta1.SensuAsset) (*v1beta1.SensuAsset, error)
+	UpdateStatus(*v1beta1.SensuAsset) (*v1beta1.SensuAsset, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1beta1.SensuAsset, error)
@@ -114,6 +115,22 @@ func (c *sensuAssets) Update(sensuAsset *v1beta1.SensuAsset) (result *v1beta1.Se
 		Namespace(c.ns).
 		Resource("sensuassets").
 		Name(sensuAsset.Name).
+		Body(sensuAsset).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *sensuAssets) UpdateStatus(sensuAsset *v1beta1.SensuAsset) (result *v1beta1.SensuAsset, err error) {
+	result = &v1beta1.SensuAsset{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("sensuassets").
+		Name(sensuAsset.Name).
+		SubResource("status").
 		Body(sensuAsset).
 		Do().
 		Into(result)

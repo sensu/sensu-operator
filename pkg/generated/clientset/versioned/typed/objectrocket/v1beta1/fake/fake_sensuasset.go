@@ -100,6 +100,18 @@ func (c *FakeSensuAssets) Update(sensuAsset *v1beta1.SensuAsset) (result *v1beta
 	return obj.(*v1beta1.SensuAsset), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeSensuAssets) UpdateStatus(sensuAsset *v1beta1.SensuAsset) (*v1beta1.SensuAsset, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(sensuassetsResource, "status", c.ns, sensuAsset), &v1beta1.SensuAsset{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1beta1.SensuAsset), err
+}
+
 // Delete takes name of the sensuAsset and deletes it. Returns an error if one occurs.
 func (c *FakeSensuAssets) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
