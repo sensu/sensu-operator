@@ -17,6 +17,7 @@ package k8sutil
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
@@ -53,7 +54,12 @@ func listClustersURI(ns string) string {
 	return fmt.Sprintf("/apis/%s/namespaces/%s/%s", api.SchemeGroupVersion.String(), ns, api.SensuClusterResourcePlural)
 }
 
-func CreateCRD(clientset apiextensionsclient.Interface, crdName, rkind, rplural, shortName string) error {
+func CreateCRD(clientset apiextensionsclient.Interface,
+	crdName,
+	rkind,
+	rplural,
+	shortName string,
+	validation *apiextensionsv1beta1.CustomResourceValidation) error {
 	crd := &apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: crdName,
@@ -66,16 +72,40 @@ func CreateCRD(clientset apiextensionsclient.Interface, crdName, rkind, rplural,
 				Plural: rplural,
 				Kind:   rkind,
 			},
+			Validation: validation,
 		},
 	}
 	if len(shortName) != 0 {
 		crd.Spec.Names.ShortNames = []string{shortName}
 	}
-	_, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
-	if err != nil && !IsKubernetesResourceAlreadyExistError(err) {
+	existingCRD, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+	if err != nil && IsKubernetesResourceAlreadyExistError(err) {
+		// Get the version from k8s, as the above version doesn't seem to have resourceversion
+		if existingCRD, err = clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.GetName(), metav1.GetOptions{}); err != nil {
+			return err
+		}
+		if !crdEqual(existingCRD, crd) {
+			crd.ResourceVersion = existingCRD.ResourceVersion
+			if _, err := clientset.ApiextensionsV1beta1().CustomResourceDefinitions().Update(crd); err != nil {
+				return err
+			}
+		}
+		return nil
+	} else if err != nil && !IsKubernetesResourceAlreadyExistError(err) {
 		return err
 	}
 	return nil
+}
+
+func crdEqual(crd1, crd2 *apiextensionsv1beta1.CustomResourceDefinition) (equal bool) {
+	if crd1.Spec.Group != crd2.Spec.Group ||
+		crd1.Spec.Version != crd2.Spec.Version ||
+		crd1.Spec.Scope != crd2.Spec.Scope ||
+		!reflect.DeepEqual(crd1.Spec.Names, crd2.Spec.Names) ||
+		!reflect.DeepEqual(crd1.Spec.Validation, crd2.Spec.Validation) {
+		return false
+	}
+	return true
 }
 
 func WaitCRDReady(clientset apiextensionsclient.Interface, crdName string) error {

@@ -16,6 +16,7 @@ package v1beta1
 
 import (
 	sensutypes "github.com/sensu/sensu-go/types"
+	k8s_api_extensions_v1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,6 +38,12 @@ type SensuAssetList struct {
 type SensuAsset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              SensuAssetSpec `json:"spec"`
+	// Status is the sensu asset's status
+	Status SensuAssetStatus `json:"status"`
+}
+
+type SensuAssetSpec struct {
 	// URL is the location of the asset
 	URL string `json:"url,omitempty"`
 
@@ -55,9 +62,6 @@ type SensuAsset struct {
 	Organization string `json:"organization,omitempty"`
 	// Metadata contains the name, namespace, labels and annotations of the check
 	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
-
-	// Status is the sensu asset's status
-	Status SensuAssetStatus `json:"status"`
 }
 
 // SensuAssetStatus is the status of the sensu asset
@@ -70,12 +74,37 @@ func (a SensuAsset) ToAPISensuAsset() *sensutypes.Asset {
 	return &sensutypes.Asset{
 		ObjectMeta: sensutypes.ObjectMeta{
 			Name:        a.ObjectMeta.Name,
-			Namespace:   a.SensuMetadata.Namespace,
+			Namespace:   a.Spec.SensuMetadata.Namespace,
 			Labels:      a.ObjectMeta.Labels,
 			Annotations: a.ObjectMeta.Annotations,
 		},
-		URL:     a.URL,
-		Sha512:  a.Sha512,
-		Filters: a.Filters,
+		URL:     a.Spec.URL,
+		Sha512:  a.Spec.Sha512,
+		Filters: a.Spec.Filters,
+	}
+}
+
+// GetCustomResourceValidation returns the asset's resource validation
+func (a SensuAsset) GetCustomResourceValidation() *k8s_api_extensions_v1beta1.CustomResourceValidation {
+	minItems := int64(1)
+	return &k8s_api_extensions_v1beta1.CustomResourceValidation{
+		OpenAPIV3Schema: &k8s_api_extensions_v1beta1.JSONSchemaProps{
+			Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
+				"metadata": k8s_api_extensions_v1beta1.JSONSchemaProps{
+					Required: []string{"finalizers", "name", "namespace"},
+					Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
+						"finalizers": k8s_api_extensions_v1beta1.JSONSchemaProps{
+							Type:     "array",
+							MinItems: &minItems,
+							// This is required to be set to false, or you get error
+							// 'uniqueItems cannot be set to true since the runtime complexity becomes quadratic'
+							UniqueItems: false,
+							// MinItems by itself doesn't seem to work.
+							Required: []string{"asset.finalizer.objectrocket.com"},
+						},
+					},
+				},
+			},
+		},
 	}
 }

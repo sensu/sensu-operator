@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
         - name: sensu-agent
-          image: sensu/sensu:2.0.0-beta.3.1
+          image: sensu/sensu:5.1.0
           command: ["/opt/sensu/bin/sensu-agent", "start"]
           env:
             - name: SENSU_BACKEND_URL
@@ -22,3 +22,11 @@ spec:
         - name: dummy-service
           image: busybox
           command: ["/bin/sleep", "100000"]
+      nodeSelector:
+        node-role.kubernetes.io/platform_worker: "true"
+
+      tolerations:
+        - key: "node_role"
+          operator: "Equal"
+          value: "platform_worker"
+          effect: "NoSchedule"

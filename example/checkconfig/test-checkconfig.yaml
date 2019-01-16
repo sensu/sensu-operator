@@ -1,0 +1,19 @@
+---
+apiVersion: objectrocket.com/v1beta1
+kind: SensuCheckConfig
+metadata:
+  name: sensu
+  namespace: sensu
+  finalizers:
+  - checkconfig.finalizer.objectrocket.com
+spec:
+  command: check-http -u https://www.google.com/
+  publish: true
+  subscriptions:
+  - test
+  interval: 15
+  runtime_assets:
+  - sensu-asset-http
+  sensu_metadata:
+    name: platdev0
+    namespace: default
