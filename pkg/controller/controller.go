@@ -205,9 +205,7 @@ func (c *Controller) initCRD() (err error) {
 	return
 }
 
-func (c *Controller) clusterExists(clusterName string) bool {
-	if _, ok := c.clusters[clusterName]; ok {
-		return true
-	}
-	return false
+func (c *Controller) clusterExists(clusterName string) (ok bool) {
+	_, ok = c.clusters[clusterName]
+	return
 }
