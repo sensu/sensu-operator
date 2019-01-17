@@ -2,6 +2,7 @@ package client
 
 import (
 	"testing"
+	"time"
 
 	"github.com/sensu/sensu-go/cli"
 	"github.com/sensu/sensu-go/cli/client"
@@ -170,6 +171,7 @@ func TestSensuClient_ensureCredentials(t *testing.T) {
 		},
 	}
 	sensuCliClient := client.New(&conf)
+
 	logger := logrus.WithFields(logrus.Fields{
 		"component": "cli-client",
 	})
@@ -221,6 +223,7 @@ func TestSensuClient_ensureCredentials(t *testing.T) {
 				clusterName: tt.fields.clusterName,
 				namespace:   tt.fields.namespace,
 				sensuCli:    tt.fields.sensuCli,
+				timeout:     2 * time.Second,
 			}
 			if err := s.ensureCredentials(); (err != nil) != tt.wantErr {
 				t.Errorf("SensuClient.ensureCredentials() error = %v, wantErr %v", err, tt.wantErr)

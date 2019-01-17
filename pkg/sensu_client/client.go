@@ -46,7 +46,7 @@ func New(clusterName, namespace string, sensuNamespace string) *SensuClient {
 		logger:      logrus.WithField("pkg", "sensu_client").WithField("cluster-name", clusterName),
 		clusterName: clusterName,
 		namespace:   namespace,
-		timeout:     defaultTimeout,
+		timeout:     time.Duration(defaultTimeout),
 	}
 
 	conf := basic.Config{
@@ -84,13 +84,16 @@ func (s *SensuClient) makeFullyQualifiedSensuClientURL() string {
 }
 
 func (s *SensuClient) ensureCredentials() (err error) {
-	var tokens *types.Tokens
+	var (
+		tokens *types.Tokens
+	)
 
 	currentTokens := s.sensuCli.Config.Tokens()
 	if currentTokens == nil || currentTokens.Access == "" {
 
 		c1 := make(chan types.Tokens, 1)
 		go func() {
+			var tokens *types.Tokens
 			if tokens, err = s.sensuCli.Client.CreateAccessToken(fmt.Sprintf("http://%s:8080", s.makeFullyQualifiedSensuClientURL()), "admin", "P@ssw0rd!"); err != nil {
 				s.logger.Errorf("create token err: %+v", err)
 				return

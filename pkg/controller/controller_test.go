@@ -329,7 +329,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	cancelFunc()
 }
 
-func TestController_initCRD(t *testing.T) {
+func initInformers() (Informer, Informer, Informer) {
 	var (
 		assetInformer   Informer
 		checkInformer   Informer
@@ -344,6 +344,11 @@ func TestController_initCRD(t *testing.T) {
 	handlerInformer.indexer = fakeIndexer{}
 	handlerInformer.controller = fakeController{}
 	handlerInformer.queue = fakeQueue{}
+	return assetInformer, checkInformer, handlerInformer
+}
+
+func TestController_initCRD(t *testing.T) {
+	assetInformer, checkInformer, handlerInformer := initInformers()
 	type fields struct {
 		logger     *logrus.Entry
 		Config     Config

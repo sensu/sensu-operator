@@ -18,16 +18,25 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const (
 	// AWS S3 related consts
-	BackupStorageTypeS3          BackupStorageType = "S3"
-	AWSSecretCredentialsFileName                   = "credentials"
-	AWSSecretConfigFileName                        = "config"
+
+	// BackupStorageTypeS3 is the backup storage type for ec2 s3
+	BackupStorageTypeS3 BackupStorageType = "S3"
+	// AWSSecretCredentialsFileName is the credentials file name
+	AWSSecretCredentialsFileName = "credentials"
+	// AWSSecretConfigFileName is the secret config name
+	AWSSecretConfigFileName = "config"
 
 	// Azure ABS related consts
-	BackupStorageTypeABS      BackupStorageType = "ABS"
-	AzureSecretStorageAccount                   = "storage-account"
-	AzureSecretStorageKey                       = "storage-key"
+
+	// BackupStorageTypeABS is the azure backup storage type
+	BackupStorageTypeABS BackupStorageType = "ABS"
+	// AzureSecretStorageAccount is the azure secret storage account name
+	AzureSecretStorageAccount = "storage-account"
+	// AzureSecretStorageKey is the azure secrets storage key
+	AzureSecretStorageKey = "storage-key"
 )
 
+// BackupStorageType is a backup storage type
 type BackupStorageType string
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

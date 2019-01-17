@@ -24,11 +24,12 @@ import (
 
 const (
 	defaultRepository = "sensu/sensu"
-	// TODO: probably should default to a stable version eventually
-	DefaultSensuVersion = "2.0.0-beta.4.1"
+	// DefaultSensuVersion is the default sensu version
+	DefaultSensuVersion = "5.1.0"
 )
 
 var (
+	// ErrBackupUnsetRestoreSet is an error specific to backup policy not being set
 	// TODO: move validation code into separate package.
 	ErrBackupUnsetRestoreSet = errors.New("spec: backup policy must be set if restore policy is set")
 )
@@ -47,6 +48,7 @@ type SensuClusterList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// SensuCluster is a sensu cluster
 type SensuCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -54,6 +56,7 @@ type SensuCluster struct {
 	Status            ClusterStatus `json:"status"`
 }
 
+// AsOwner returns an owner ref
 func (c *SensuCluster) AsOwner() metav1.OwnerReference {
 	trueVar := true
 	return metav1.OwnerReference{
@@ -65,6 +68,7 @@ func (c *SensuCluster) AsOwner() metav1.OwnerReference {
 	}
 }
 
+// ClusterSpec is the cluster specification details
 type ClusterSpec struct {
 	// Size is the expected size of the sensu cluster.
 	// The sensu-operator will eventually make the size of the running
@@ -159,6 +163,7 @@ type PodPolicy struct {
 	DNSTimeoutInSecond int64 `json:"DNSTimeoutInSecond,omitempty"`
 }
 
+// Validate validates the sensu cluster
 // TODO: move this to initializer
 func (c *ClusterSpec) Validate() error {
 	if c.TLS != nil {
@@ -179,28 +184,28 @@ func (c *ClusterSpec) Validate() error {
 
 // SetDefaults cleans up user passed spec, e.g. defaulting, transforming fields.
 // TODO: move this to initializer
-func (e *SensuCluster) SetDefaults() {
-	c := &e.Spec
-	if len(c.Repository) == 0 {
-		c.Repository = defaultRepository
+func (c *SensuCluster) SetDefaults() {
+	spec := &c.Spec
+	if len(spec.Repository) == 0 {
+		spec.Repository = defaultRepository
 	}
 
-	if len(c.Version) == 0 {
-		c.Version = DefaultSensuVersion
+	if len(spec.Version) == 0 {
+		spec.Version = DefaultSensuVersion
 	}
 
-	c.Version = strings.TrimLeft(c.Version, "v")
+	spec.Version = strings.TrimLeft(spec.Version, "v")
 
 	// convert PodPolicy.AntiAffinity to Pod.Affinity.PodAntiAffinity
 	// TODO: Remove this once PodPolicy.AntiAffinity is removed
-	if c.Pod != nil && c.Pod.AntiAffinity && c.Pod.Affinity == nil {
-		c.Pod.Affinity = &v1.Affinity{
+	if spec.Pod != nil && spec.Pod.AntiAffinity && spec.Pod.Affinity == nil {
+		spec.Pod.Affinity = &v1.Affinity{
 			PodAntiAffinity: &v1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
 					{
 						// set anti-affinity to the sensu pods that belongs to the same cluster
 						LabelSelector: &metav1.LabelSelector{MatchLabels: map[string]string{
-							"sensu_cluster": e.Name,
+							"sensu_cluster": c.Name,
 						}},
 						TopologyKey: "kubernetes.io/hostname",
 					},
