@@ -43,6 +43,7 @@ type SensuAsset struct {
 	Status SensuAssetStatus `json:"status"`
 }
 
+// SensuAssetSpec is the specification for a sensu asset
 type SensuAssetSpec struct {
 	// URL is the location of the asset
 	URL string `json:"url,omitempty"`
@@ -60,13 +61,14 @@ type SensuAssetSpec struct {
 
 	// Organization indicates to which org an asset belongs to
 	Organization string `json:"organization,omitempty"`
-	// Metadata contains the name, namespace, labels and annotations of the check
-	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
+	// Metadata contains the sensu name, sensu namespace, sensu labels and sensu annotations of the check
+	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
 }
 
 // SensuAssetStatus is the status of the sensu asset
 type SensuAssetStatus struct {
-	Accepted bool `json:"accepted"`
+	Accepted  bool   `json:"accepted"`
+	LastError string `json:"lastError"`
 }
 
 // ToAPISensuAsset returns a value of the SensuAsset type from the Sensu API

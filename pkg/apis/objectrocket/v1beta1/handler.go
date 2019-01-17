@@ -53,8 +53,8 @@ type SensuHandlerSpec struct {
 	Filters       []string      `json:"filters"`
 	EnvVars       []string      `json:"envVars"`
 	RuntimeAssets []string      `json:"runtimeAssets"`
-	// Metadata contains the name, namespace, and labels of the handler
-	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
+	// Metadata contains the sensu name, sensu namespace, sensu annotations, and sensu labels of the handler
+	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
 	// Validation is the OpenAPIV3Schema validation for sensu assets
 	Validation k8s_api_extensions_v1beta1.CustomResourceValidation `json:"validation,omitempty"`
 }
@@ -67,7 +67,8 @@ type HandlerSocket struct {
 
 // SensuHandlerStatus is the status of the sensu handler
 type SensuHandlerStatus struct {
-	Accepted bool `json:"accepted"`
+	Accepted  bool   `json:"accepted"`
+	LastError string `json:"lastError"`
 }
 
 // ToSensuType returns a value of the Handler type from the Sensu API

@@ -30,7 +30,7 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.Name, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
 	err := sensuClient.DeleteAsset(asset)
 	if err != nil {
 		c.logger.Warningf("failed to handle asset delete event: %v", err)
@@ -44,13 +44,20 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 }
 
 func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
-	var (
-		err error
-	)
-
+	var err error
+	if !c.clusterExists(asset.Spec.SensuMetadata.ClusterName) {
+		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply asset: %+v", asset.Spec.SensuMetadata.ClusterName, asset)
+		copy := asset.DeepCopy()
+		copy.Status.Accepted = false
+		copy.Status.LastError = fmt.Sprintf("Sensu cluster '%s' not found", asset.Spec.SensuMetadata.ClusterName)
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(copy.GetNamespace()).Update(copy); err != nil {
+			c.logger.Warningf("failed to update assets's status during update event: %v", err)
+		}
+		return
+	}
 	c.logger.Debugf("in syncSensuAsset, about to update asset within sensu cluster, using sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-		asset.Spec.SensuMetadata.Name, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
-	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.Name, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+		asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateAsset(asset)
 	c.logger.Debugf("in syncSensuAsset, after update asset in sensu cluster")
 	if err != nil {
@@ -61,11 +68,11 @@ func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
 		copy := asset.DeepCopy()
 		copy.Status.Accepted = true
 		c.logger.Debugf("in syncSensuAsset, about to update asset status within k8s, using sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-			asset.Spec.SensuMetadata.Name, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+			asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(copy.GetNamespace()).Update(copy); err != nil {
 			c.logger.Warningf("failed to update assets's status during update event: %v", err)
 		}
 		c.logger.Debugf("in syncSensuAsset, done updating asset's status within k8s, using sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s",
-			asset.Spec.SensuMetadata.Name, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+			asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
 	}
 }

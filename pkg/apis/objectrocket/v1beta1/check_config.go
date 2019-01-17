@@ -91,15 +91,16 @@ type SensuCheckConfigSpec struct {
 	// EnvVars is the list of environment variables to set for the check's
 	// execution environment.
 	EnvVars []string `json:"env_vars"`
-	// Metadata contains the name, namespace, labels and annotations of the check
-	SensuMetadata ObjectMeta `json:"sensu_metadata,omitempty"`
+	// Metadata contains the sensu name, sensu clusterName, sensu namespace, sensu labels and sensu annotations of the check
+	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
 	// Validation is the OpenAPIV3Schema validation for sensu checks
 	Validation k8s_api_extensions_v1beta1.CustomResourceValidation `json:"validation,omitempty"`
 }
 
 // SensuCheckConfigStatus is the status of the sensu check config
 type SensuCheckConfigStatus struct {
-	Accepted bool `json:"accepted"`
+	Accepted  bool   `json:"accepted"`
+	LastError string `json:"lastError"`
 }
 
 // A ProxyRequests represents a request to execute a proxy check

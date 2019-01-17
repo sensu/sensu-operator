@@ -30,7 +30,7 @@ func (c *Controller) onDeleteSensuCheckConfig(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.Name, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
 	err := sensuClient.DeleteCheckConfig(checkConfig)
 	if err != nil {
 		c.logger.Warningf("failed to handle checkconfig delete event: %v", err)
@@ -44,12 +44,23 @@ func (c *Controller) onDeleteSensuCheckConfig(obj interface{}) {
 }
 
 func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
+	var err error
 	c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-		checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
-	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.Name, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
-	err := sensuClient.UpdateCheckConfig(checkConfig)
+		checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
+	if !c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
+		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply checkConfig: %+v", checkConfig.Spec.SensuMetadata.ClusterName, checkConfig)
+		copy := checkConfig.DeepCopy()
+		copy.Status.Accepted = false
+		copy.Status.LastError = fmt.Sprintf("Sensu cluster '%s' not found", checkConfig.Spec.SensuMetadata.ClusterName)
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(copy.GetNamespace()).Update(copy); err != nil {
+			c.logger.Warningf("failed to update checkConfig's status during update event: %v", err)
+		}
+		return
+	}
+	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
+	err = sensuClient.UpdateCheckConfig(checkConfig)
 	c.logger.Debugf("in syncSensuCheckConfig, after update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-		checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
+		checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	if err != nil {
 		c.logger.Warningf("failed to handle checkconfig update event: %v", err)
 	}
@@ -57,11 +68,11 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 		copy := checkConfig.DeepCopy()
 		copy.Status.Accepted = true
 		c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-			checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
+			checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(copy.GetNamespace()).Update(copy); err != nil {
 			c.logger.Warningf("failed to update checkconfig's status during update event: %v", err)
 		}
 		c.logger.Debugf("in syncSensuCheckConfig, done updating checkconfig status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-			checkConfig.Spec.SensuMetadata.Name, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
+			checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	}
 }

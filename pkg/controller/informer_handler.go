@@ -43,12 +43,23 @@ func (c *Controller) onDeleteSensuHandler(obj interface{}) {
 }
 
 func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
+	var err error
 	c.logger.Debugf("in syncSensuHandler, about to update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-		handler.Spec.SensuMetadata.Name, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
-	sensuClient := sensu_client.New(handler.ClusterName, handler.GetNamespace(), "default")
-	err := sensuClient.UpdateHandler(handler)
+		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+	if !c.clusterExists(handler.Spec.SensuMetadata.ClusterName) {
+		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply handler: %+v", handler.Spec.SensuMetadata.ClusterName, handler)
+		copy := handler.DeepCopy()
+		copy.Status.Accepted = false
+		copy.Status.LastError = fmt.Sprintf("Sensu cluster '%s' not found", handler.Spec.SensuMetadata.ClusterName)
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuHandlers(copy.GetNamespace()).Update(copy); err != nil {
+			c.logger.Warningf("failed to update handler's status during update event: %v", err)
+		}
+		return
+	}
+	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), "default")
+	err = sensuClient.UpdateHandler(handler)
 	c.logger.Debugf("in syncSensuHandler, after update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-		handler.Spec.SensuMetadata.Name, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
 	if err != nil {
 		c.logger.Warningf("failed to handle handler update event: %v", err)
 	}
@@ -56,11 +67,11 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 		copy := handler.DeepCopy()
 		copy.Status.Accepted = true
 		c.logger.Debugf("in syncSensuHandler, about to update handler status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-			handler.Spec.SensuMetadata.Name, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+			handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuHandlers(copy.GetNamespace()).Update(copy); err != nil {
 			c.logger.Warningf("failed to update handlers's status during update event: %v", err)
 		}
-		c.logger.Debugf("in syncSensuCheckConfig, done updating handler's status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
-			handler.Spec.SensuMetadata.Name, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+		c.logger.Debugf("in syncSensuhandler, done updating handler's status within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+			handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
 	}
 }

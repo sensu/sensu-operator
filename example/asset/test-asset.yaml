@@ -10,6 +10,7 @@ spec:
   url: https://s3.us-east-2.amazonaws.com/objectrocket-product-versions/sensu/assets/check-http.tar.gz
   sha512: 0c075f3a26735cb5a6afe06816471e7a6bf1dfb619204846e7697fdc00260ba046b4842959b90649c6cc54358d62239932e5c4d9dddba7c7fd257f8ac51b04fd
   clusterName: sensu
-  sensu_metadata:
-    name: platdev0
+  sensuMetadata:
+    name: sensu-asset-http
+    clusterName: platdev0
     namespace: default

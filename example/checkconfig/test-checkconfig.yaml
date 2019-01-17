@@ -2,7 +2,7 @@
 apiVersion: objectrocket.com/v1beta1
 kind: SensuCheckConfig
 metadata:
-  name: sensu
+  name: sensu-checkconfig-google
   namespace: sensu
   finalizers:
   - checkconfig.finalizer.objectrocket.com
@@ -14,6 +14,7 @@ spec:
   interval: 15
   runtime_assets:
   - sensu-asset-http
-  sensu_metadata:
-    name: platdev0
+  sensuMetadata:
+    name: sensu-checkconfig-google
+    clusterName: platdev0
     namespace: default
