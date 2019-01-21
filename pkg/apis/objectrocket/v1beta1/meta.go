@@ -4,12 +4,12 @@ package v1beta1
 type ObjectMeta struct {
 	// Name must be unique within a namespace. Name is primarily intended for creation
 	// idempotence and configuration definition.
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name" yaml:"name"`
 	// ClusterName is the sensu cluster name within the kubernetes cluster
-	ClusterName string `json:"clusterName,omitempty" yaml:"clusterName,omitempty"`
+	ClusterName string `json:"clusterName" yaml:"clusterName"`
 	// Namespace defines a logical grouping of objects within which each object name must
 	// be unique.
-	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Namespace string `json:"namespace" yaml:"namespace"`
 	// Map of string keys and values that can be used to organize and categorize
 	// (scope and select) objects. May also be used in filters and token
 	// substitution.

@@ -112,32 +112,44 @@ func (s *SensuClient) ensureHandler(handler *v1beta1.SensuHandler) error {
 	return nil
 }
 
-func handlerEqual(a1, a2 *sensu_api_core_v2.Handler) bool {
-	if a1 == nil || a2 == nil {
+func handlerEqual(h1, h2 *sensu_api_core_v2.Handler) bool {
+	if h1 == nil || h2 == nil {
 		return false
 	}
 
-	if a1.Type != a2.Type ||
-		a1.Mutator != a2.Mutator ||
-		a1.Command != a2.Command ||
-		a1.Timeout != a2.Timeout {
+	if h1.Type != h2.Type ||
+		h1.Mutator != h2.Mutator ||
+		h1.Command != h2.Command ||
+		h1.Timeout != h2.Timeout {
 		return false
 	}
 
-	for i, handler := range a1.Handlers {
-		if handler != a2.Handlers[i] {
+	if len(h1.Handlers) != len(h2.Handlers) {
+		return false
+	}
+
+	if len(h1.Filters) != len(h2.Filters) {
+		return false
+	}
+
+	if len(h1.EnvVars) != len(h2.EnvVars) {
+		return false
+	}
+
+	for i, handler := range h1.Handlers {
+		if handler != h2.Handlers[i] {
 			return false
 		}
 	}
 
-	for i, filter := range a1.Filters {
-		if filter != a2.Filters[i] {
+	for i, filter := range h1.Filters {
+		if filter != h2.Filters[i] {
 			return false
 		}
 	}
 
-	for i, envVar := range a1.EnvVars {
-		if envVar != a2.EnvVars[i] {
+	for i, envVar := range h1.EnvVars {
+		if envVar != h2.EnvVars[i] {
 			return false
 		}
 	}

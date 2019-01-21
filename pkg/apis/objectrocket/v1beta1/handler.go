@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	crdutil "github.com/objectrocket/sensu-operator/pkg/util/k8sutil/conversionutil"
 	sensutypes "github.com/sensu/sensu-go/types"
 	k8s_api_extensions_v1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,7 @@ type SensuHandlerList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +k8s:openapi-gen=true
 // SensuHandler is the type of sensu handlers
 type SensuHandler struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -43,18 +44,19 @@ type SensuHandler struct {
 }
 
 // SensuHandlerSpec is the spec section of the custom object
+// +k8s:openapi-gen=true
 type SensuHandlerSpec struct {
 	Type          string        `json:"type"`
-	Mutator       string        `json:"mutator"`
-	Command       string        `json:"command"`
-	Timeout       uint32        `json:"timeout"`
-	Socket        HandlerSocket `json:"socket"`
-	Handlers      []string      `json:"handlers"`
-	Filters       []string      `json:"filters"`
-	EnvVars       []string      `json:"envVars"`
-	RuntimeAssets []string      `json:"runtimeAssets"`
+	Mutator       string        `json:"mutator,omitempty"`
+	Command       string        `json:"command,omitempty"`
+	Timeout       uint32        `json:"timeout,omitempty"`
+	Socket        HandlerSocket `json:"socket,omitempty"`
+	Handlers      []string      `json:"handlers,omitempty"`
+	Filters       []string      `json:"filters,omitempty"`
+	EnvVars       []string      `json:"envVars,omitempty"`
+	RuntimeAssets []string      `json:"runtimeAssets,omitempty"`
 	// Metadata contains the sensu name, sensu namespace, sensu annotations, and sensu labels of the handler
-	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
+	SensuMetadata ObjectMeta `json:"sensuMetadata"`
 	// Validation is the OpenAPIV3Schema validation for sensu assets
 	Validation k8s_api_extensions_v1beta1.CustomResourceValidation `json:"validation,omitempty"`
 }
@@ -97,24 +99,5 @@ func (a SensuHandler) ToSensuType() *sensutypes.Handler {
 
 // GetCustomResourceValidation rreturns the handlers's resource validation
 func (a SensuHandler) GetCustomResourceValidation() *k8s_api_extensions_v1beta1.CustomResourceValidation {
-	minItems := int64(1)
-	return &k8s_api_extensions_v1beta1.CustomResourceValidation{
-		OpenAPIV3Schema: &k8s_api_extensions_v1beta1.JSONSchemaProps{
-			Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-				"metadata": k8s_api_extensions_v1beta1.JSONSchemaProps{
-					Required: []string{"finalizers", "name", "namespace"},
-					Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-						"finalizers": k8s_api_extensions_v1beta1.JSONSchemaProps{
-							Type:     "array",
-							MinItems: &minItems,
-							// This is required to be set to false, or you get error
-							// 'uniqueItems cannot be set to true since the runtime complexity becomes quadratic'
-							UniqueItems: false,
-							// MinItems by itself doesn't seem to work.
-							Required: []string{"handler.finalizer.objectrocket.com"},
-						},
-					},
-				}},
-		},
-	}
+	return crdutil.GetCustomResourceValidation("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuHandler", GetOpenAPIDefinitions)
 }

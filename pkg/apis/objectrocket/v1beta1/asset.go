@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	crdutil "github.com/objectrocket/sensu-operator/pkg/util/k8sutil/conversionutil"
 	sensutypes "github.com/sensu/sensu-go/types"
 	k8s_api_extensions_v1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,7 @@ type SensuAssetList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +k8s:openapi-gen=true
 // SensuAsset is the type of sensu assets
 type SensuAsset struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -44,6 +45,7 @@ type SensuAsset struct {
 }
 
 // SensuAssetSpec is the specification for a sensu asset
+// +k8s:openapi-gen=true
 type SensuAssetSpec struct {
 	// URL is the location of the asset
 	URL string `json:"url,omitempty"`
@@ -52,7 +54,7 @@ type SensuAssetSpec struct {
 	Sha512 string `json:"sha512,omitempty"`
 
 	// Metadata is a set of key value pair associated with the asset
-	Metadata map[string]string `json:"asset_metadata"`
+	Metadata map[string]string `json:"assetMetadata"`
 
 	// Filters are a collection of sensu queries, used by the system to determine
 	// if the asset should be installed. If more than one filter is present the
@@ -62,7 +64,7 @@ type SensuAssetSpec struct {
 	// Organization indicates to which org an asset belongs to
 	Organization string `json:"organization,omitempty"`
 	// Metadata contains the sensu name, sensu namespace, sensu labels and sensu annotations of the check
-	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
+	SensuMetadata ObjectMeta `json:"sensuMetadata"`
 }
 
 // SensuAssetStatus is the status of the sensu asset
@@ -88,25 +90,6 @@ func (a SensuAsset) ToAPISensuAsset() *sensutypes.Asset {
 
 // GetCustomResourceValidation returns the asset's resource validation
 func (a SensuAsset) GetCustomResourceValidation() *k8s_api_extensions_v1beta1.CustomResourceValidation {
-	minItems := int64(1)
-	return &k8s_api_extensions_v1beta1.CustomResourceValidation{
-		OpenAPIV3Schema: &k8s_api_extensions_v1beta1.JSONSchemaProps{
-			Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-				"metadata": k8s_api_extensions_v1beta1.JSONSchemaProps{
-					Required: []string{"finalizers", "name", "namespace"},
-					Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-						"finalizers": k8s_api_extensions_v1beta1.JSONSchemaProps{
-							Type:     "array",
-							MinItems: &minItems,
-							// This is required to be set to false, or you get error
-							// 'uniqueItems cannot be set to true since the runtime complexity becomes quadratic'
-							UniqueItems: false,
-							// MinItems by itself doesn't seem to work.
-							Required: []string{"asset.finalizer.objectrocket.com"},
-						},
-					},
-				},
-			},
-		},
-	}
+	return crdutil.GetCustomResourceValidation("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuAsset", GetOpenAPIDefinitions)
+
 }

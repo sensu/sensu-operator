@@ -47,6 +47,16 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 	var err error
 	c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
+	// Ensure that the finalizer exists, failing if it can't be added at this time
+	if len(checkConfig.Finalizers) == 0 && checkConfig.DeletionTimestamp == nil {
+		copy := checkConfig.DeepCopy()
+		copy.Finalizers = append(copy.Finalizers, "asset.finalizer.objectrocket.com")
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(copy.GetNamespace()).Update(copy); err != nil {
+			msg := fmt.Sprintf("failed to update assets's finalizer during sync event: %v", err)
+			c.logger.Warningf(msg)
+			return
+		}
+	}
 	if !c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
 		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply checkConfig: %+v", checkConfig.Spec.SensuMetadata.ClusterName, checkConfig)
 		copy := checkConfig.DeepCopy()

@@ -46,6 +46,16 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 	var err error
 	c.logger.Debugf("in syncSensuHandler, about to update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+	// Ensure that the finalizer exists, failing if it can't be added at this time
+	if len(handler.Finalizers) == 0 && handler.DeletionTimestamp == nil {
+		copy := handler.DeepCopy()
+		copy.Finalizers = append(copy.Finalizers, "handler.finalizer.objectrocket.com")
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuHandlers(copy.GetNamespace()).Update(copy); err != nil {
+			msg := fmt.Sprintf("failed to update handler's finalizer during sync event: %v", err)
+			c.logger.Warningf(msg)
+			return
+		}
+	}
 	if !c.clusterExists(handler.Spec.SensuMetadata.ClusterName) {
 		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply handler: %+v", handler.Spec.SensuMetadata.ClusterName, handler)
 		copy := handler.DeepCopy()

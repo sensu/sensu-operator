@@ -149,6 +149,14 @@ func equal(c1, c2 *sensu_api_core_v2.CheckConfig) bool {
 		return false
 	}
 
+	if len(c1.Handlers) != len(c2.Handlers) ||
+		len(c1.RuntimeAssets) != len(c2.RuntimeAssets) ||
+		len(c1.Subscriptions) != len(c2.Subscriptions) ||
+		len(c1.OutputMetricHandlers) != len(c2.OutputMetricHandlers) ||
+		len(c1.EnvVars) != len(c2.EnvVars) {
+		return false
+	}
+
 	for i, handler := range c1.Handlers {
 		if handler != c2.Handlers[i] {
 			return false

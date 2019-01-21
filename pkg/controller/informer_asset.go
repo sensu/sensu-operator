@@ -45,6 +45,16 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 
 func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
 	var err error
+	// Ensure that the finalizer exists, failing if it can't be added at this time
+	if len(asset.Finalizers) == 0 && asset.DeletionTimestamp == nil {
+		copy := asset.DeepCopy()
+		copy.Finalizers = append(copy.Finalizers, "checkconfig.finalizer.objectrocket.com")
+		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(copy.GetNamespace()).Update(copy); err != nil {
+			msg := fmt.Sprintf("failed to update checkconfig's finalizer during sync event: %v", err)
+			c.logger.Warningf(msg)
+			return
+		}
+	}
 	if !c.clusterExists(asset.Spec.SensuMetadata.ClusterName) {
 		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply asset: %+v", asset.Spec.SensuMetadata.ClusterName, asset)
 		copy := asset.DeepCopy()

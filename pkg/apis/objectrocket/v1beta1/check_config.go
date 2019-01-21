@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	crdutil "github.com/objectrocket/sensu-operator/pkg/util/k8sutil/conversionutil"
 	sensu_go_v2 "github.com/sensu/sensu-go/api/core/v2"
 	k8s_api_extensions_v1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,7 @@ type SensuCheckConfigList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +k8s:openapi-gen=true
 // SensuCheckConfig is the k8s object associated with a sensu check
 type SensuCheckConfig struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -43,54 +44,55 @@ type SensuCheckConfig struct {
 }
 
 // SensuCheckConfigSpec is the specification for a sensu check config
+// +k8s:openapi-gen=true
 type SensuCheckConfigSpec struct {
 	// Command is the command to be executed.
-	Command string `json:"command,omitempty"`
+	Command string `json:"command"`
 	// Handlers are the event handler for the check (incidents and/or metrics).
-	Handlers []string `json:"handlers"`
+	Handlers []string `json:"handlers,omitempty"`
 	// HighFlapThreshold is the flap detection high threshold (% state change) for
 	// the check. Sensu uses the same flap detection algorithm as Nagios.
-	HighFlapThreshold uint32 `json:"high_flap_threshold"`
+	HighFlapThreshold uint32 `json:"highFlapThreshold,omitempty"`
 	// Interval is the interval, in seconds, at which the check should be run.
-	Interval uint32 `json:"interval"`
+	Interval uint32 `json:"interval,omitempty"`
 	// LowFlapThreshold is the flap detection low threshold (% state change) for
 	// the check. Sensu uses the same flap detection algorithm as Nagios.
-	LowFlapThreshold uint32 `json:"low_flap_threshold"`
+	LowFlapThreshold uint32 `json:"lowFlapThreshold,omitempty"`
 	// Publish indicates if check requests are published for the check
-	Publish bool `json:"publish"`
+	Publish bool `json:"publish,omitempty"`
 	// RuntimeAssets are a list of assets required to execute check.
-	RuntimeAssets []string `json:"runtime_assets"`
+	RuntimeAssets []string `json:"runtimeAssets,omitempty"`
 	// Subscriptions is the list of subscribers for the check.
 	Subscriptions []string `json:"subscriptions"`
 	// ExtendedAttributes store serialized arbitrary JSON-encoded data
 	ExtendedAttributes []byte `json:"-"`
 	// Sources indicates the name of the entity representing an external resource
-	ProxyEntityName string `json:"proxy_entity_name"`
+	ProxyEntityName string `json:"proxyEntityName,omitempty"`
 	// CheckHooks is the list of check hooks for the check
-	CheckHooks []HookList `json:"check_hooks"`
+	CheckHooks []HookList `json:"checkHooks,omitempty"`
 	// STDIN indicates if the check command accepts JSON via stdin from the agent
-	Stdin bool `json:"stdin"`
+	Stdin bool `json:"stdin,omitempty"`
 	// Subdue represents one or more time windows when the check should be subdued.
-	Subdue *TimeWindowWhen `json:"subdue"`
+	Subdue *TimeWindowWhen `json:"subdue,omitempty"`
 	// Cron is the cron string at which the check should be run.
 	Cron string `json:"cron,omitempty"`
 	// TTL represents the length of time in seconds for which a check result is valid.
-	Ttl int64 `json:"ttl"`
+	Ttl int64 `json:"ttl,omitempty"`
 	// Timeout is the timeout, in seconds, at which the check has to run
-	Timeout uint32 `json:"timeout"`
+	Timeout uint32 `json:"timeout,omitempty"`
 	// ProxyRequests represents a request to execute a proxy check
-	ProxyRequests *ProxyRequests `json:"proxy_requests,omitempty"`
+	ProxyRequests *ProxyRequests `json:"proxyRequests,omitempty"`
 	// RoundRobin enables round-robin scheduling if set true.
-	RoundRobin bool `json:"round_robin"`
+	RoundRobin bool `json:"roundRobin,omitempty"`
 	// OutputOutputMetricFormat is the metric protocol that the check's output will be
 	// expected to follow in order to be extracted.
-	OutputMetricFormat string `json:"output_metric_format"`
+	OutputMetricFormat string `json:"outputMetric_format,omitempty"`
 	// OutputOutputMetricHandlers is the list of event handlers that will respond to metrics
 	// that have been extracted from the check.
-	OutputMetricHandlers []string `json:"output_metric_handlers"`
+	OutputMetricHandlers []string `json:"outputMetric_handlers,omitempty"`
 	// EnvVars is the list of environment variables to set for the check's
 	// execution environment.
-	EnvVars []string `json:"env_vars"`
+	EnvVars []string `json:"envVars,omitempty"`
 	// Metadata contains the sensu name, sensu clusterName, sensu namespace, sensu labels and sensu annotations of the check
 	SensuMetadata ObjectMeta `json:"sensuMetadata,omitempty"`
 	// Validation is the OpenAPIV3Schema validation for sensu checks
@@ -255,25 +257,5 @@ func (c SensuCheckConfig) ToSensuType() *sensu_go_v2.CheckConfig {
 
 // GetCustomResourceValidation returns the asset's resource validation
 func (c SensuCheckConfig) GetCustomResourceValidation() *k8s_api_extensions_v1beta1.CustomResourceValidation {
-	minItems := int64(1)
-	return &k8s_api_extensions_v1beta1.CustomResourceValidation{
-		OpenAPIV3Schema: &k8s_api_extensions_v1beta1.JSONSchemaProps{
-			Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-				"metadata": k8s_api_extensions_v1beta1.JSONSchemaProps{
-					Required: []string{"finalizers", "name", "namespace"},
-					Properties: map[string]k8s_api_extensions_v1beta1.JSONSchemaProps{
-						"finalizers": k8s_api_extensions_v1beta1.JSONSchemaProps{
-							Type:     "array",
-							MinItems: &minItems,
-							// This is required to be set to false, or you get error
-							// 'uniqueItems cannot be set to true since the runtime complexity becomes quadratic'
-							UniqueItems: false,
-							// MinItems by itself doesn't seem to work.
-							Required: []string{"check.finalizer.objectrocket.com"},
-						},
-					},
-				},
-			},
-		},
-	}
+	return crdutil.GetCustomResourceValidation("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuCheckConfig", GetOpenAPIDefinitions)
 }

@@ -103,6 +103,10 @@ func assetEqual(a1, a2 *sensu_api_core_v2.Asset) bool {
 		return false
 	}
 
+	if len(a1.Filters) != len(a2.Filters) {
+		return false
+	}
+
 	for i, filter := range a1.Filters {
 		if filter != a2.Filters[i] {
 			return false

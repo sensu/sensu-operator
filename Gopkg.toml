@@ -24,12 +24,14 @@
 #   go-tests = true
 #   unused-packages = true
 required = [
+  "github.com/json-iterator/go",
   "k8s.io/code-generator/cmd/client-gen",
   "k8s.io/code-generator/cmd/conversion-gen",
   "k8s.io/code-generator/cmd/deepcopy-gen",
   "k8s.io/code-generator/cmd/defaulter-gen",
   "k8s.io/code-generator/cmd/informer-gen",
   "k8s.io/code-generator/cmd/lister-gen",
+  "k8s.io/kube-openapi/cmd/openapi-gen",
 ]
 
 [[constraint]]
@@ -56,6 +58,10 @@ required = [
   name = "k8s.io/client-go"
   version = "kubernetes-1.10.0"
 
+[[constraint]]
+  name = "github.com/json-iterator/go"
+  revision = "f7279a603edee96fe7764d3de9c6ff8cf9970994"
+
 [prune]
   go-tests = true
   unused-packages = true
@@ -63,6 +69,10 @@ required = [
   [[prune.project]]
     name = "k8s.io/code-generator"
     unused-packages = false
+
+  [[prune.project]]
+     name = "k8s.io/kube-openapi"
+     unused-packages = false
 
 [[constraint]]
   name = "github.com/sensu/sensu-go"
