@@ -216,3 +216,13 @@ KUBECONFIG=~/.kube/config \
 ```
 
 [k8s-home]: http://kubernetes.io
+
+## Development
+
+### OpenAPI specs
+
+We use automatically generated OpenAPI specs for our custom resource definitions. If you make changes to the types, you can run this to regenerate specs:
+
+```console
+./hack/k8s/openapi-gen/openapi-gen.sh
+```

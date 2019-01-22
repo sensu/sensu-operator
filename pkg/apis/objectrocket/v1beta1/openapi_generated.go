@@ -133,7 +133,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuAssetSpec(ref common.ReferenceCal
 						},
 					},
 				},
-				Required: []string{"filters", "sensuMetadata"},
+				Required: []string{"sensuMetadata"},
 			},
 		},
 		Dependencies: []string{
@@ -337,14 +337,14 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuCheckConfigSpec(ref common.Refere
 							Format:      "",
 						},
 					},
-					"outputMetric_format": {
+					"outputMetricFormat": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OutputOutputMetricFormat is the metric protocol that the check's output will be expected to follow in order to be extracted.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"outputMetric_handlers": {
+					"outputMetricHandlers": {
 						SchemaProps: spec.SchemaProps{
 							Description: "OutputOutputMetricHandlers is the list of event handlers that will respond to metrics that have been extracted from the check.",
 							Type:        []string{"array"},

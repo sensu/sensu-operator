@@ -86,10 +86,10 @@ type SensuCheckConfigSpec struct {
 	RoundRobin bool `json:"roundRobin,omitempty"`
 	// OutputOutputMetricFormat is the metric protocol that the check's output will be
 	// expected to follow in order to be extracted.
-	OutputMetricFormat string `json:"outputMetric_format,omitempty"`
+	OutputMetricFormat string `json:"outputMetricFormat,omitempty"`
 	// OutputOutputMetricHandlers is the list of event handlers that will respond to metrics
 	// that have been extracted from the check.
-	OutputMetricHandlers []string `json:"outputMetric_handlers,omitempty"`
+	OutputMetricHandlers []string `json:"outputMetricHandlers,omitempty"`
 	// EnvVars is the list of environment variables to set for the check's
 	// execution environment.
 	EnvVars []string `json:"envVars,omitempty"`

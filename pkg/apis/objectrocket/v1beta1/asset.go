@@ -56,7 +56,7 @@ type SensuAssetSpec struct {
 	// Filters are a collection of sensu queries, used by the system to determine
 	// if the asset should be installed. If more than one filter is present the
 	// queries are joined by the "AND" operator.
-	Filters []string `json:"filters"`
+	Filters []string `json:"filters,omitempty"`
 
 	// Organization indicates to which org an asset belongs to
 	Organization string `json:"organization,omitempty"`
