@@ -66,7 +66,7 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 		}
 		return
 	}
-	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), "default")
+	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateHandler(handler)
 	c.logger.Debugf("in syncSensuHandler, after update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
