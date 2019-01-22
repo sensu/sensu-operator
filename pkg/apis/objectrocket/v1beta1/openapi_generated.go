@@ -105,21 +105,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuAssetSpec(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
-					"assetMetadata": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Metadata is a set of key value pair associated with the asset",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"Filters": {
+					"filters": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Filters are a collection of sensu queries, used by the system to determine if the asset should be installed. If more than one filter is present the queries are joined by the \"AND\" operator.",
 							Type:        []string{"array"},
@@ -147,7 +133,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuAssetSpec(ref common.ReferenceCal
 						},
 					},
 				},
-				Required: []string{"assetMetadata", "Filters", "sensuMetadata"},
+				Required: []string{"filters", "sensuMetadata"},
 			},
 		},
 		Dependencies: []string{

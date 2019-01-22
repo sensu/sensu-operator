@@ -53,13 +53,10 @@ type SensuAssetSpec struct {
 	// Sha512 is the SHA-512 checksum of the asset
 	Sha512 string `json:"sha512,omitempty"`
 
-	// Metadata is a set of key value pair associated with the asset
-	Metadata map[string]string `json:"assetMetadata"`
-
 	// Filters are a collection of sensu queries, used by the system to determine
 	// if the asset should be installed. If more than one filter is present the
 	// queries are joined by the "AND" operator.
-	Filters []string `son:"filters"`
+	Filters []string `json:"filters"`
 
 	// Organization indicates to which org an asset belongs to
 	Organization string `json:"organization,omitempty"`
