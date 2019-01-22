@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,12 +14,23 @@ import (
 
 type sensuAPITestClient struct {
 	client.APIClient
+	namespaceError error
 }
 
 func (c *sensuAPITestClient) CreateAccessToken(url, userid, secret string) (*types.Tokens, error) {
 	return &types.Tokens{
 		Access: "fake",
 	}, nil
+}
+
+func (c *sensuAPITestClient) FetchNamespace(ns string) (*types.Namespace, error) {
+	return &types.Namespace{
+		Name: ns,
+	}, c.namespaceError
+}
+
+func (c *sensuAPITestClient) CreateNamespace(ns *types.Namespace) error {
+	return nil
 }
 
 func TestNew(t *testing.T) {
@@ -227,6 +239,96 @@ func TestSensuClient_ensureCredentials(t *testing.T) {
 			}
 			if err := s.ensureCredentials(); (err != nil) != tt.wantErr {
 				t.Errorf("SensuClient.ensureCredentials() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSensuClient_ensureNamespace(t *testing.T) {
+	conf := basic.Config{
+		Cluster: basic.Cluster{
+			APIUrl:  "http://testCluster.testnamespace.svc:8080",
+			Edition: "enterprise",
+			Tokens: &types.Tokens{
+				Access: "fake",
+			},
+		},
+		Profile: basic.Profile{
+			Format:    "json",
+			Namespace: "testnamespace",
+		},
+	}
+	// sensuCliClient := client.New(&conf)
+
+	logger := logrus.WithFields(logrus.Fields{
+		"component": "cli-client",
+	})
+	type fields struct {
+		logger      *logrus.Entry
+		clusterName string
+		namespace   string
+		sensuCli    *cli.SensuCli
+		timeout     time.Duration
+	}
+	type args struct {
+		namespace string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			"ensure existing namespace does not fail",
+			fields{
+				logrus.WithField("pkg", "sensu_client").WithField("cluster-name", "testCluster"),
+				"testCluster",
+				"testnamespace",
+				&cli.SensuCli{
+					Client: &sensuAPITestClient{},
+					Config: &conf,
+					Logger: logger,
+				},
+				2 * time.Second,
+			},
+			args{
+				"testsensunamespace",
+			},
+			false,
+		},
+		{
+			"ensure non-existing namespace creates",
+			fields{
+				logrus.WithField("pkg", "sensu_client").WithField("cluster-name", "testCluster"),
+				"testCluster",
+				"testnamespace",
+				&cli.SensuCli{
+					Client: &sensuAPITestClient{
+						namespaceError: fmt.Errorf("not found"),
+					},
+					Config: &conf,
+					Logger: logger,
+				},
+				2 * time.Second,
+			},
+			args{
+				"testsensunamespace",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &SensuClient{
+				logger:      tt.fields.logger,
+				clusterName: tt.fields.clusterName,
+				namespace:   tt.fields.namespace,
+				sensuCli:    tt.fields.sensuCli,
+				timeout:     tt.fields.timeout,
+			}
+			if err := s.ensureNamespace(tt.args.namespace); (err != nil) != tt.wantErr {
+				t.Errorf("SensuClient.ensureNamespace() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

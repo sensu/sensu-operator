@@ -138,3 +138,37 @@ func (s *SensuClient) ensureCredentials() (err error) {
 	}
 	return nil
 }
+
+func (s *SensuClient) ensureNamespace(namespace string) (err error) {
+	if err = s.ensureCredentials(); err != nil {
+		s.logger.Errorf("error while trying to ensure credentials: %+v", err)
+		return
+	}
+
+	c1 := make(chan error, 1)
+	go func() {
+		if _, err := s.sensuCli.Client.FetchNamespace(namespace); err != nil {
+			if err.Error() == errSensuClusterObjectNotFound.Error() {
+				if err = s.sensuCli.Client.CreateNamespace(&types.Namespace{Name: namespace}); err != nil {
+					s.logger.Errorf("Failed to create new namespace %s: %s", namespace, err)
+					c1 <- err
+					return
+				}
+			}
+			s.logger.Errorf("unknown error while attempting to created namespace %s: %+v", namespace, err)
+			c1 <- err
+		}
+		c1 <- nil
+	}()
+
+	select {
+	case err = <-c1:
+		if err != nil {
+			return
+		}
+	case <-time.After(s.timeout):
+		s.logger.Warnf("timeout from sensu server after 10 seconds")
+	}
+
+	return nil
+}
