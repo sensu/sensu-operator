@@ -60,6 +60,10 @@ func (s *SensuClient) ensureHandler(handler *v1beta1.SensuHandler) error {
 		return err
 	}
 
+	if err := s.ensureNamespace(handler.Spec.SensuMetadata.Namespace); err != nil {
+		return err
+	}
+
 	a1 := make(chan fetchHandlerResponse, 1)
 	go func() {
 		var err error

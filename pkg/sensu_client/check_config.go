@@ -33,6 +33,10 @@ func (s *SensuClient) DeleteCheckConfig(c *v1beta1.SensuCheckConfig) error {
 		return err
 	}
 
+	if err := s.ensureNamespace(c.Spec.SensuMetadata.Namespace); err != nil {
+		return err
+	}
+
 	c1 := make(chan error, 1)
 
 	go func() {

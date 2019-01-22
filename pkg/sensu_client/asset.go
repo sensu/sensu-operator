@@ -41,6 +41,10 @@ func (s *SensuClient) ensureAsset(asset *v1beta1.SensuAsset) error {
 		return err
 	}
 
+	if err = s.ensureNamespace(asset.Spec.SensuMetadata.Namespace); err != nil {
+		return err
+	}
+
 	a1 := make(chan fetchAssetResponse, 1)
 	go func() {
 		var err error
