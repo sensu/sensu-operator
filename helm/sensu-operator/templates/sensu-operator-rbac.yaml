@@ -1,4 +1,12 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+...
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ .Values.rbac.clusterRole }}-binding
@@ -8,10 +16,10 @@ roleRef:
   name: {{ .Values.rbac.clusterRole }}
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: {{ Release.Name }}
   namespace: {{ .Release.Namespace }}
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ .Values.rbac.clusterRole }}
