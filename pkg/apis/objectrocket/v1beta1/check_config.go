@@ -32,10 +32,10 @@ type SensuCheckConfigList struct {
 	Items           []SensuCheckConfig `json:"items"`
 }
 
+// SensuCheckConfig is the k8s object associated with a sensu check
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// SensuCheckConfig is the k8s object associated with a sensu check
 type SensuCheckConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

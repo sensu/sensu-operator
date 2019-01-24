@@ -31,6 +31,7 @@ type ObjectrocketV1beta1Interface interface {
 	SensuBackupsGetter
 	SensuCheckConfigsGetter
 	SensuClustersGetter
+	SensuEventFiltersGetter
 	SensuHandlersGetter
 	SensuRestoresGetter
 }
@@ -54,6 +55,10 @@ func (c *ObjectrocketV1beta1Client) SensuCheckConfigs(namespace string) SensuChe
 
 func (c *ObjectrocketV1beta1Client) SensuClusters(namespace string) SensuClusterInterface {
 	return newSensuClusters(c, namespace)
+}
+
+func (c *ObjectrocketV1beta1Client) SensuEventFilters(namespace string) SensuEventFilterInterface {
+	return newSensuEventFilters(c, namespace)
 }
 
 func (c *ObjectrocketV1beta1Client) SensuHandlers(namespace string) SensuHandlerInterface {

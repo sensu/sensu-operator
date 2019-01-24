@@ -202,6 +202,14 @@ func (c *Controller) initCRD() (err error) {
 		err = fmt.Errorf("failed to create %s CRD: %v", api.SensuHandlerCRDName, err)
 		return
 	}
+	if err = k8sutil.CreateCRD(c.KubeExtCli, api.SensuEventFilterCRDName, api.SensuEventFilterResourceKind, api.SensuEventFilterResourcePlural, "sensueventfilter", api.SensuEventFilter{}.GetCustomResourceValidation()); err != nil {
+		err = fmt.Errorf("failed to create %s CRD: %v", api.SensuEventFilterCRDName, err)
+		return
+	}
+	if err = k8sutil.WaitCRDReady(c.KubeExtCli, api.SensuEventFilterCRDName); err != nil {
+		err = fmt.Errorf("failed to create %s CRD: %v", api.SensuEventFilterCRDName, err)
+		return
+	}
 	return
 }
 

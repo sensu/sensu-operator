@@ -16,7 +16,7 @@ import (
 )
 
 func TestController_syncSensuHandler(t *testing.T) {
-	assetInformer, checkInformer, handlerInformer := initInformers()
+	assetInformer, checkInformer, handlerInformer, eventFilterHandler := initInformers()
 	type fields struct {
 		logger     *logrus.Entry
 		Config     Config
@@ -97,6 +97,7 @@ func TestController_syncSensuHandler(t *testing.T) {
 			c.informers[api.SensuAssetResourcePlural] = &assetInformer
 			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
+			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterHandler
 			tt.initFunc(t, c, tt.handler)
 			c.syncSensuHandler(tt.handler)
 			if err := tt.testFunc(c, tt.handler); err != nil {

@@ -26,6 +26,8 @@ type SensuCheckConfigExpansion interface{}
 
 type SensuClusterExpansion interface{}
 
+type SensuEventFilterExpansion interface{}
+
 type SensuHandlerExpansion interface{}
 
 type SensuRestoreExpansion interface{}
