@@ -183,7 +183,7 @@ func (c *Controller) run() {
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuEventFilterResourcePlural].queue.ShutDown()
-		for c.processNextEventfilterItem() {
+		for c.processNextEventFilterItem() {
 		}
 	}()
 	wg.Wait()
