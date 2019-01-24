@@ -318,7 +318,7 @@ func (c *Controller) processNextHandlerItem() bool {
 	return true
 }
 
-func (c *Controller) processNextEventfilterItem() bool {
+func (c *Controller) processNextEventFilterItem() bool {
 	var eventFilterInformer = c.informers[api.SensuEventFilterResourcePlural]
 	key, quit := eventFilterInformer.queue.Get()
 	if quit {
