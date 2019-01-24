@@ -54,7 +54,7 @@ type SensuEventFilterSpec struct {
 	Expressions []string `json:"expressions"`
 	// Runtime assets are Sensu assets that contain javascript libraries. They
 	// are evaluated within the execution context.
-	RuntimeAssets []string `json:"runtime_assets,omitempty"`
+	RuntimeAssets []string `json:"runtimeAssets,omitempty"`
 
 	// Organization indicates to which org an event filter belongs to
 	Organization string `json:"organization,omitempty"`
