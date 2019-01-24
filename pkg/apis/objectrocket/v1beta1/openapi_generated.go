@@ -33,6 +33,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuAssetSpec":       schema_pkg_apis_objectrocket_v1beta1_SensuAssetSpec(ref),
 		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuCheckConfig":     schema_pkg_apis_objectrocket_v1beta1_SensuCheckConfig(ref),
 		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuCheckConfigSpec": schema_pkg_apis_objectrocket_v1beta1_SensuCheckConfigSpec(ref),
+		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilter":     schema_pkg_apis_objectrocket_v1beta1_SensuEventFilter(ref),
+		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterSpec": schema_pkg_apis_objectrocket_v1beta1_SensuEventFilterSpec(ref),
 		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuHandler":         schema_pkg_apis_objectrocket_v1beta1_SensuHandler(ref),
 		"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuHandlerSpec":     schema_pkg_apis_objectrocket_v1beta1_SensuHandlerSpec(ref),
 	}
@@ -390,6 +392,116 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuCheckConfigSpec(ref common.Refere
 		},
 		Dependencies: []string{
 			"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.HookList", "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.ObjectMeta", "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.ProxyRequests", "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.TimeWindowWhen", "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1.CustomResourceValidation"},
+	}
+}
+
+func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilter(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SensuEventFilter is the type of sensu event filter",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status is the sensu event filters's status",
+							Ref:         ref("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterStatus"),
+						},
+					},
+				},
+				Required: []string{"spec", "status"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterSpec", "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilterSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SensuEventFilterSpec is the specification for a sensu event filter",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"action": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Action specifies to allow/deny events to continue through the pipeline",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"expressions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Expressions is an array of boolean expressions that are &&'d together to determine if the event matches this filter.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"runtime_assets": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Runtime assets are Sensu assets that contain javascript libraries. They are evaluated within the execution context.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"organization": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Organization indicates to which org an event filter belongs to",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"sensuMetadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Metadata contains the sensu name, sensu namespace, sensu labels and sensu annotations of the check",
+							Ref:         ref("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.ObjectMeta"),
+						},
+					},
+				},
+				Required: []string{"action", "expressions", "sensuMetadata"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.ObjectMeta"},
 	}
 }
 

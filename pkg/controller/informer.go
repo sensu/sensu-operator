@@ -66,6 +66,7 @@ func (c *Controller) Start(ctx context.Context) {
 	c.addInformer(ns, api.SensuAssetResourcePlural, &api.SensuAsset{})
 	c.addInformer(ns, api.SensuCheckConfigResourcePlural, &api.SensuCheckConfig{})
 	c.addInformer(ns, api.SensuHandlerResourcePlural, &api.SensuHandler{})
+	c.addInformer(ns, api.SensuEventFilterResourcePlural, &api.SensuEventFilter{})
 	c.startProcessing(ctx)
 }
 
@@ -75,15 +76,18 @@ func (c *Controller) startProcessing(ctx context.Context) {
 		assetController       hasSynced
 		checkconfigController hasSynced
 		handlerController     hasSynced
+		eventFilterController hasSynced
 	)
 	clusterController = c.informers[api.SensuClusterResourcePlural].controller
 	assetController = c.informers[api.SensuAssetResourcePlural].controller
 	checkconfigController = c.informers[api.SensuCheckConfigResourcePlural].controller
 	handlerController = c.informers[api.SensuHandlerResourcePlural].controller
+	eventFilterController = c.informers[api.SensuEventFilterResourcePlural].controller
 	go clusterController.Run(ctx.Done())
 	go assetController.Run(ctx.Done())
 	go checkconfigController.Run(ctx.Done())
 	go handlerController.Run(ctx.Done())
+	go eventFilterController.Run(ctx.Done())
 	if !cache.WaitForCacheSync(ctx.Done(), clusterController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for cluster caches to sync")
 	}
@@ -95,6 +99,9 @@ func (c *Controller) startProcessing(ctx context.Context) {
 	}
 	if !cache.WaitForCacheSync(ctx.Done(), handlerController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for handler caches to sync")
+	}
+	if !cache.WaitForCacheSync(ctx.Done(), eventFilterController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for event filter caches to sync")
 	}
 	for i := 0; i < c.Config.WorkerThreads; i++ {
 		go wait.Until(c.run, time.Second, ctx.Done())
@@ -171,6 +178,12 @@ func (c *Controller) run() {
 		defer wg.Done()
 		defer c.informers[api.SensuHandlerResourcePlural].queue.ShutDown()
 		for c.processNextHandlerItem() {
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		defer c.informers[api.SensuEventFilterResourcePlural].queue.ShutDown()
+		for c.processNextEventFilterItem() {
 		}
 	}()
 	wg.Wait()
@@ -302,6 +315,40 @@ func (c *Controller) processNextHandlerItem() bool {
 		}
 	}
 	handlerInformer.queue.Forget(key)
+	return true
+}
+
+func (c *Controller) processNextEventFilterItem() bool {
+	var eventFilterInformer = c.informers[api.SensuEventFilterResourcePlural]
+	key, quit := eventFilterInformer.queue.Get()
+	if quit {
+		return false
+	}
+	defer eventFilterInformer.queue.Done(key)
+	obj, exists, err := eventFilterInformer.indexer.GetByKey(key.(string))
+	if err != nil {
+		if eventFilterInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			eventFilterInformer.queue.AddRateLimited(key)
+			return true
+		}
+	} else {
+		if !exists {
+			_, exists, err := c.finalizers[api.SensuEventFilterResourcePlural].GetByKey(key.(string))
+			if exists && err != nil {
+				c.finalizers[api.SensuEventFilterResourcePlural].Delete(key)
+			}
+		} else {
+			if obj != nil {
+				c.onUpdateSensuEventFilter(obj.(*api.SensuEventFilter))
+				filter := obj.(*api.SensuEventFilter)
+				// If filter deletion has been initiated, also delete filter from sensu cluster
+				if filter.DeletionTimestamp != nil {
+					c.onDeleteSensuEventFilter(obj)
+				}
+			}
+		}
+	}
+	eventFilterInformer.queue.Forget(key)
 	return true
 }
 

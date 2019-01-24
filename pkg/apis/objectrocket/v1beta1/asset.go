@@ -32,10 +32,10 @@ type SensuAssetList struct {
 	Items           []SensuAsset `json:"items"`
 }
 
+// SensuAsset is the type of sensu assets
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
-// SensuAsset is the type of sensu assets
 type SensuAsset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

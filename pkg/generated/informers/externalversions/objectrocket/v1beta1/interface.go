@@ -32,6 +32,8 @@ type Interface interface {
 	SensuCheckConfigs() SensuCheckConfigInformer
 	// SensuClusters returns a SensuClusterInformer.
 	SensuClusters() SensuClusterInformer
+	// SensuEventFilters returns a SensuEventFilterInformer.
+	SensuEventFilters() SensuEventFilterInformer
 	// SensuHandlers returns a SensuHandlerInformer.
 	SensuHandlers() SensuHandlerInformer
 	// SensuRestores returns a SensuRestoreInformer.
@@ -67,6 +69,11 @@ func (v *version) SensuCheckConfigs() SensuCheckConfigInformer {
 // SensuClusters returns a SensuClusterInformer.
 func (v *version) SensuClusters() SensuClusterInformer {
 	return &sensuClusterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// SensuEventFilters returns a SensuEventFilterInformer.
+func (v *version) SensuEventFilters() SensuEventFilterInformer {
+	return &sensuEventFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SensuHandlers returns a SensuHandlerInformer.
