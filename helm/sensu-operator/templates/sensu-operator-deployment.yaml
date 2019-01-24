@@ -21,11 +21,11 @@ spec:
         release: {{ .Release.Name }}
         name: {{ template "sensu-operator.fullname" . }}
     spec:
+      serviceAccountName: {{ .Release.Name }}
       containers:
       - name: sensu-operator
         image: {{ .Values.image.repository }}:{{ .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        serviceAccountName: {{ .Release.Name }}
         ports:
         - containerPort: 8080
           name: http        
