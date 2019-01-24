@@ -117,7 +117,7 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 		fields.Everything())
 	// create finalizer to ensure that sensu server objects are deleted when crd is deleted
 	finalizer := cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
-	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, 0, cache.ResourceEventHandlerFuncs{
+	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, c.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			c.logger.Warnf("Adding %v to the queue", obj)
 			key, err := cache.MetaNamespaceKeyFunc(obj)

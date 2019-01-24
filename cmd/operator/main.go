@@ -48,6 +48,7 @@ var (
 	name              string
 	listenAddr        string
 	gcInterval        time.Duration
+	resyncInterval    time.Duration
 	logLevel          string
 	logrusLevel       logrus.Level
 	printVersion      bool
@@ -63,6 +64,7 @@ func init() {
 	flag.BoolVar(&printVersion, "version", false, "Show version and quit")
 	flag.BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
 	flag.DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
+	flag.DurationVar(&resyncInterval, "resync-interval", 5*time.Minute, "How often to refresh/resync all Custom Resources")
 	flag.BoolVar(&clusterWide, "cluster-wide", false, "Enable operator to watch clusters in all namespaces")
 	flag.IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
 	flag.IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
@@ -168,6 +170,7 @@ func newControllerConfig() controller.Config {
 		WorkerThreads:     workerThreads,
 		ProcessingRetries: processingRetries,
 		LogLevel:          logrusLevel,
+		ResyncPeriod:      resyncInterval,
 	}
 
 	return cfg
