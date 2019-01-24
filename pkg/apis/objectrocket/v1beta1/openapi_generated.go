@@ -399,7 +399,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilter(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "SensuEventFilter is the type of sensu assets",
+				Description: "SensuEventFilter is the type of sensu event filter",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -428,7 +428,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilter(ref common.ReferenceC
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Status is the sensu asset's status",
+							Description: "Status is the sensu event filters's status",
 							Ref:         ref("github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1.SensuEventFilterStatus"),
 						},
 					},
@@ -485,7 +485,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilterSpec(ref common.Refere
 					},
 					"organization": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Organization indicates to which org an asset belongs to",
+							Description: "Organization indicates to which org an event filter belongs to",
 							Type:        []string{"string"},
 							Format:      "",
 						},

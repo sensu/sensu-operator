@@ -909,7 +909,7 @@ func (in *SensuEventFilterList) DeepCopyInto(out *SensuEventFilterList) {
 	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]SensuAsset, len(*in))
+		*out = make([]SensuEventFilter, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
