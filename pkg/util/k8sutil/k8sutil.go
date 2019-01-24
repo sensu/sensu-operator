@@ -203,7 +203,7 @@ func CreateAgentService(kubecli kubernetes.Interface, clusterName, ns string, ow
 }
 
 func APIServiceName(clusterName string) string {
-	return clusterName + "-api"
+	return fmt.Sprintf("%s-api", clusterName)
 }
 
 func CreateAPIService(kubecli kubernetes.Interface, clusterName, ns string, owner metav1.OwnerReference) error {

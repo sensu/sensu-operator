@@ -29,7 +29,7 @@ func (c *Controller) onDeleteSensuHandler(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(handler.ClusterName, handler.GetNamespace(), "default")
+	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
 	err := sensuClient.DeleteHandler(handler)
 	if err != nil {
 		c.logger.Warningf("failed to handle handler delete event: %v", err)
