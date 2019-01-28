@@ -38,8 +38,6 @@ spec:
           {{- range .Values.resourceSettings.request }}
             {{ .name }}: {{ .value }}
           {{- end }}
-        command:
-        - sensu-operator
 {{- if .Values.sensu.clusterWide }}
         - -cluster-wide
 {{- end }}

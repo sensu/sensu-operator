@@ -2,8 +2,22 @@ export GOBIN := $(PWD)/bin
 export PATH := $(GOBIN):$(PATH)
 export INSTALL_FLAG=
 
-IMAGE?=objectrocket/sensu-operator:v0.0.1
-DOCKER_IMAGE = sensu-operator
+# Shell to use for running scripts
+export SHELL := /bin/bash
+# Get docker path or an empty string
+DOCKER := $(shell command -v docker)
+
+IMAGE ?= objectrocket/sensu-operator:v0.0.1
+DOCKER_IMAGE = objectrocket/sensu-operator
+# allow builds without tags
+IMAGE_VERSION ?= latest
+
+# Test if the dependencies we need to run this Makefile are installed
+deps-development:
+ifndef DOCKER
+	@echo "Docker is not available. Please install docker"
+	@exit 1
+endif
 
 .PHONY: all
 all: build container
@@ -11,23 +25,6 @@ all: build container
 .PHONY: build
 build:
 	@hack/build/operator/build
-	# @hack/build/backup_operator/build
-	# @hack/build/restore_operator/build
-
-.PHONY: build
-build-linux:
-	@hack/build/operator/build_linux
-
-.PHONY: container
-container:
-	@IMAGE=$(IMAGE) hack/build/docker_push
-
-.PHONY: dependencies
-dependencies:
-	@dep ensure -v
-
-.PHONY: dep
-dep: dependencies
 
 .PHONY: test
 test:
@@ -41,12 +38,8 @@ unittest:
 clean:
 	@go clean
 
-.PHONY: docker-build
-docker-build:
-	docker build -f hack/build/Dockerfile -t objectrocket/$(DOCKER_IMAGE):latest .
+docker-build: deps-development
+	docker build -t $(DOCKER_IMAGE):$(IMAGE_VERSION) .
 
-.PHONY: docker-deploy
-docker-deploy:
-	docker tag objectrocket/$(DOCKER_IMAGE):latest objectrocket/$(DOCKER_IMAGE):$(DOCKER_TAG)
-	docker push objectrocket/$(DOCKER_IMAGE):$(DOCKER_TAG)
-	docker push objectrocket/$(DOCKER_IMAGE):latest
+docker-push: docker-build
+	docker push $(DOCKER_IMAGE):$(IMAGE_VERSION)
