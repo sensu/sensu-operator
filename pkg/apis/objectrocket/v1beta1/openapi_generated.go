@@ -469,7 +469,7 @@ func schema_pkg_apis_objectrocket_v1beta1_SensuEventFilterSpec(ref common.Refere
 							},
 						},
 					},
-					"runtime_assets": {
+					"runtimeAssets": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Runtime assets are Sensu assets that contain javascript libraries. They are evaluated within the execution context.",
 							Type:        []string{"array"},
