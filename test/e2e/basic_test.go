@@ -96,14 +96,4 @@ func TestCreateCluster(t *testing.T) {
 	if len(clusterMembers) != 3 {
 		t.Fatalf("expected to find three cluster members but found %d", len(clusterMembers))
 	}
-
-	clusterHealth, err := sensuClient.Health()
-	if err != nil {
-		t.Fatalf("failed to get cluster health: %v", err)
-	}
-	for _, memberHealth := range clusterHealth {
-		if !memberHealth.Healthy {
-			t.Fatalf("not all cluster members are healthy: %+v", clusterHealth)
-		}
-	}
 }

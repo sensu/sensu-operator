@@ -25,6 +25,7 @@ import (
 	sensucli "github.com/sensu/sensu-go/cli"
 	"github.com/sirupsen/logrus"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -108,6 +109,7 @@ func New(cfg Config) *Controller {
 
 // handleClusterEvent returns true if cluster is ignored (not managed) by this instance.
 func (c *Controller) handleClusterEvent(event *Event) (bool, error) {
+	var err error
 	clus := event.Object
 
 	if !c.managed(clus) {
@@ -135,10 +137,7 @@ func (c *Controller) handleClusterEvent(event *Event) (bool, error) {
 			return false, fmt.Errorf("unsafe state. cluster (%s) was created before but we received event (%s)", clus.Name, event.Type)
 		}
 
-		nc := cluster.New(c.makeClusterConfig(), clus)
-
-		c.clusters[clus.Name] = nc
-
+		c.clusters[clus.Name] = cluster.New(c.makeClusterConfig(), clus)
 		clustersCreated.Inc()
 		clustersTotal.Inc()
 
@@ -154,6 +153,19 @@ func (c *Controller) handleClusterEvent(event *Event) (bool, error) {
 			return false, fmt.Errorf("unsafe state. cluster (%s) was never created but we received event (%s)", clus.Name, event.Type)
 		}
 		c.clusters[clus.Name].Delete()
+		deletionPolicy := v1.DeletePropagationBackground
+		err = c.KubeCli.AppsV1beta1().StatefulSets(clus.GetNamespace()).Delete(clus.GetName(), &v1.DeleteOptions{
+			PropagationPolicy: &deletionPolicy,
+		})
+		if err != nil {
+			if k8sutil.IsKubernetesResourceNotFoundError(err) {
+				c.logger.Warnf("StatefulSet %s does not exist", clus.GetName())
+
+			} else {
+				c.logger.Errorf("Failed to delete StatefulSet %s", clus.GetName())
+			}
+		}
+		c.logger.Infof("Deleted cluster %s", clus.GetName())
 		delete(c.clusters, clus.Name)
 		clustersDeleted.Inc()
 		clustersTotal.Dec()

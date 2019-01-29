@@ -22,23 +22,23 @@ import (
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/constants"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewMemberAddEvent(memberName string, cl *api.SensuCluster) *v1.Event {
+func NewMemberAddEvent(cl *api.SensuCluster) *v1.Event {
 	event := newClusterEvent(cl)
 	event.Type = v1.EventTypeNormal
 	event.Reason = "New Member Added"
-	event.Message = fmt.Sprintf("New member %s added to cluster", memberName)
+	event.Message = fmt.Sprintf("New member %s added to cluster", cl.Name)
 	return event
 }
 
-func MemberRemoveEvent(memberName string, cl *api.SensuCluster) *v1.Event {
+func MemberRemoveEvent(cl *api.SensuCluster) *v1.Event {
 	event := newClusterEvent(cl)
 	event.Type = v1.EventTypeNormal
 	event.Reason = "Member Removed"
-	event.Message = fmt.Sprintf("Existing member %s removed from the cluster", memberName)
+	event.Message = fmt.Sprintf("Existing member %s removed from the cluster", cl.Name)
 	return event
 }
 

@@ -126,7 +126,6 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 	finalizer := cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
 	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, c.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.logger.Warnf("Adding %v to the queue", obj)
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
 				informer.queue.Add(key)
@@ -204,12 +203,18 @@ func (c *Controller) processNextClusterItem() bool {
 		}
 	} else {
 		if !exists {
-			c.onDeleteSensuClus(obj)
-			// Finalizers do nothing with sensu clusters?
-			// TODO: verify
-			c.finalizers[api.SensuClusterResourcePlural].Delete(key)
+			_, exists, err := c.finalizers[api.SensuClusterResourcePlural].GetByKey(key.(string))
+			if exists && err != nil {
+				c.finalizers[api.SensuClusterResourcePlural].Delete(key)
+			}
 		} else {
-			c.onUpdateSensuClus(obj)
+			if obj != nil {
+				c.onUpdateSensuClus(obj)
+				cluster := obj.(*api.SensuCluster)
+				if cluster.DeletionTimestamp != nil {
+					c.onDeleteSensuClus(obj)
+				}
+			}
 		}
 	}
 	clusterInformer.queue.Forget(key)
@@ -367,6 +372,7 @@ func (c *Controller) onUpdateSensuClus(newObj interface{}) {
 }
 
 func (c *Controller) onDeleteSensuClus(obj interface{}) {
+	var err error
 	clus, ok := obj.(*api.SensuCluster)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
@@ -378,13 +384,18 @@ func (c *Controller) onDeleteSensuClus(obj interface{}) {
 			panic(fmt.Sprintf("Tombstone contained object that is not a SensuCluster: %#v", obj))
 		}
 	}
+
+	clus.Finalizers = make([]string, 0)
+	clus, err = c.SensuCRCli.ObjectrocketV1beta1().SensuClusters(clus.GetNamespace()).Update(clus)
+	if err != nil {
+		c.logger.Warningf("Failed to remove finalizers from cluster: %v", err)
+	}
 	ev := &Event{
 		Type:   kwatch.Deleted,
 		Object: clus,
 	}
-
 	pt.start()
-	_, err := c.handleClusterEvent(ev)
+	_, err = c.handleClusterEvent(ev)
 	if err != nil {
 		c.logger.Warningf("fail to handle event: %v", err)
 	}
@@ -392,6 +403,7 @@ func (c *Controller) onDeleteSensuClus(obj interface{}) {
 }
 
 func (c *Controller) syncSensuClus(clus *api.SensuCluster) {
+	var err error
 	ev := &Event{
 		Type:   kwatch.Added,
 		Object: clus,
@@ -402,9 +414,17 @@ func (c *Controller) syncSensuClus(clus *api.SensuCluster) {
 	if _, ok := c.clusters[clus.Name]; ok {
 		ev.Type = kwatch.Modified
 	}
-
+	// Ensure that the finalizer exists, failing if it can't be added at this time
+	if len(clus.Finalizers) == 0 && clus.DeletionTimestamp == nil {
+		clus.Finalizers = append(clus.Finalizers, "cluster.finalizer.objectrocket.com")
+		if clus, err = c.SensuCRCli.ObjectrocketV1beta1().SensuClusters(clus.GetNamespace()).Update(clus); err != nil {
+			msg := fmt.Sprintf("failed to update clusters's finalizer during sync event: %v", err)
+			c.logger.Warningf(msg)
+			return
+		}
+	}
 	pt.start()
-	_, err := c.handleClusterEvent(ev)
+	_, err = c.handleClusterEvent(ev)
 	if err != nil {
 		c.logger.Warningf("fail to handle event: %v", err)
 	}

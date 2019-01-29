@@ -19,7 +19,7 @@ import (
 
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )

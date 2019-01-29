@@ -29,21 +29,13 @@ import (
 	"github.com/objectrocket/sensu-operator/test/e2e/e2eutil"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 var Global *Framework
-
-const (
-	sensuBackupOperatorName         = "sensu-backup-operator"
-	sensuRestoreOperatorName        = "sensu-restore-operator"
-	sensuRestoreOperatorServiceName = "sensu-restore-operator"
-	sensuRestoreServicePort         = 19999
-)
 
 type Framework struct {
 	opImage    string
@@ -93,10 +85,6 @@ func teardown() error {
 	if err != nil {
 		return err
 	}
-	err = Global.KubeClient.CoreV1().Services(Global.Namespace).Delete(sensuRestoreOperatorServiceName, metav1.NewDeleteOptions(1))
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete sensu restore operator service: %v", err)
-	}
 	Global = nil
 	logrus.Info("e2e teardown successfully")
 	return nil
@@ -120,53 +108,24 @@ func (f *Framework) SetupSensuOperator() error {
 			Labels: map[string]string{"name": "sensu-operator"},
 		},
 		Spec: v1.PodSpec{
-			Containers: []v1.Container{{
-				Name:  "sensu-operator",
-				Image: f.opImage,
-				// ImagePullPolicy: v1.PullAlways,
-				Command: []string{"/usr/local/bin/sensu-operator"},
-				Env: []v1.EnvVar{
-					{
-						Name:      constants.EnvOperatorPodNamespace,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
-					},
-					{
-						Name:      constants.EnvOperatorPodName,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
-					},
-				},
-			}, {
-				Name:  sensuBackupOperatorName,
-				Image: f.opImage,
-				// ImagePullPolicy: v1.PullAlways,
-				Command: []string{"/usr/local/bin/sensu-backup-operator"},
-				Env: []v1.EnvVar{
-					{
-						Name:      constants.EnvOperatorPodNamespace,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
-					},
-					{
-						Name:      constants.EnvOperatorPodName,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+			Containers: []v1.Container{
+				v1.Container{
+					Name:  "sensu-operator",
+					Image: f.opImage,
+					// ImagePullPolicy: v1.PullAlways,
+					Command: []string{"/usr/local/bin/sensu-operator"},
+					Env: []v1.EnvVar{
+						{
+							Name:      constants.EnvOperatorPodNamespace,
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
+						},
+						{
+							Name:      constants.EnvOperatorPodName,
+							ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+						},
 					},
 				},
-			}, {
-				Name:  sensuRestoreOperatorName,
-				Image: f.opImage,
-				// ImagePullPolicy: v1.PullAlways,
-				Command: []string{"/usr/local/bin/sensu-restore-operator"},
-				Env: []v1.EnvVar{
-					{
-						Name:      constants.EnvOperatorPodNamespace,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}},
-					},
-					{
-						Name:      constants.EnvOperatorPodName,
-						ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
-					},
-				},
-			}},
-			RestartPolicy: v1.RestartPolicyNever,
+			},
 		},
 	}
 
@@ -212,27 +171,6 @@ func (f *Framework) deleteOperatorCompletely(name string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("fail to wait operator (%s) pod gone from API: %v", name, err)
-	}
-	return nil
-}
-
-// SetupSensuRestoreOperatorService creates restore operator service that is used by sensu pod to retrieve backup.
-func (f *Framework) SetupSensuRestoreOperatorService() error {
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: sensuRestoreOperatorServiceName,
-		},
-		Spec: v1.ServiceSpec{
-			Selector: map[string]string{"name": "sensu-operator"},
-			Ports: []v1.ServicePort{{
-				Protocol: v1.ProtocolTCP,
-				Port:     sensuRestoreServicePort,
-			}},
-		},
-	}
-	_, err := f.KubeClient.CoreV1().Services(f.Namespace).Create(svc)
-	if err != nil {
-		return fmt.Errorf("create restore-operator service failed: %v", err)
 	}
 	return nil
 }

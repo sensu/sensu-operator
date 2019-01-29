@@ -19,7 +19,7 @@ import (
 
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -97,7 +97,7 @@ func newSensuProbe() *v1.Probe {
 	}
 }
 
-func applyPodPolicy(clusterName string, pod *v1.Pod, policy *api.PodPolicy) {
+func applyPodPolicy(clusterName string, pod *v1.PodTemplateSpec, policy *api.PodPolicy) {
 	if policy == nil {
 		return
 	}

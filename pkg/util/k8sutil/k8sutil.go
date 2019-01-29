@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -26,7 +25,6 @@ import (
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
-	"github.com/pborman/uuid"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -34,7 +32,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -90,6 +87,10 @@ func SetSensuVersion(pod *v1.Pod, version string) {
 	pod.Annotations[sensuVersionAnnotationKey] = version
 }
 
+func SetPodTemplateSensuVersion(pod *v1.PodTemplateSpec, version string) {
+	pod.Annotations[sensuVersionAnnotationKey] = version
+}
+
 func GetPodNames(pods []*v1.Pod) []string {
 	if len(pods) == 0 {
 		return nil
@@ -106,41 +107,6 @@ func PVCNameFromMember(memberName string) string {
 	return memberName
 }
 
-func makeRestoreInitContainers(backupURL *url.URL, token, repo, version string, m *etcdutil.Member) []v1.Container {
-	return []v1.Container{
-		{
-			Name:  "fetch-backup",
-			Image: "tutum/curl",
-			Command: []string{
-				"/bin/bash", "-ec",
-				fmt.Sprintf(`
-httpcode=$(curl --write-out %%\{http_code\} --silent --output %[1]s %[2]s)
-if [[ "$httpcode" != "200" ]]; then
-	echo "http status code: ${httpcode}" >> /dev/termination-log
-	cat %[1]s >> /dev/termination-log
-	exit 1
-fi
-					`, backupFile, backupURL.String()),
-			},
-			VolumeMounts: etcdVolumeMounts(),
-		},
-		{
-			Name:  "restore-datadir",
-			Image: ImageName(repo, version),
-			Command: []string{
-				"/bin/sh", "-ec",
-				fmt.Sprintf("ETCDCTL_API=3 etcdctl snapshot restore %[1]s"+
-					" --name %[2]s"+
-					" --initial-cluster %[2]s=%[3]s"+
-					" --initial-cluster-token %[4]s"+
-					" --initial-advertise-peer-urls %[3]s"+
-					" --data-dir %[5]s 2>/dev/termination-log", backupFile, m.Name, m.PeerURL(), token, dataDir),
-			},
-			VolumeMounts: etcdVolumeMounts(),
-		},
-	}
-}
-
 func ImageName(repo, version string) string {
 	return fmt.Sprintf("%s:%v", repo, version)
 }
@@ -153,25 +119,9 @@ func imageNameBusybox(policy *api.PodPolicy) string {
 	return defaultBusyboxImage
 }
 
-func PodWithNodeSelector(p *v1.Pod, ns map[string]string) *v1.Pod {
+func PodWithNodeSelector(p *v1.PodTemplateSpec, ns map[string]string) *v1.PodTemplateSpec {
 	p.Spec.NodeSelector = ns
 	return p
-}
-
-func CreateEtcdPeerService(kubecli kubernetes.Interface, clusterName, ns string, owner metav1.OwnerReference) error {
-	ports := []v1.ServicePort{{
-		Name:       "client",
-		Port:       EtcdClientPort,
-		TargetPort: intstr.FromInt(EtcdClientPort),
-		Protocol:   v1.ProtocolTCP,
-	}, {
-		Name:       "peer",
-		Port:       2380,
-		TargetPort: intstr.FromInt(2380),
-		Protocol:   v1.ProtocolTCP,
-	}}
-
-	return createService(kubecli, clusterName, clusterName, ns, v1.ClusterIPNone, ports, owner)
 }
 
 func DashboardServiceName(clusterName string) string {
@@ -344,7 +294,7 @@ func newSensuServiceManifest(svcName, clusterName, clusterIP string, ports []v1.
 }
 
 // AddEtcdVolumeToPod abstract the process of appending volume spec to pod spec
-func AddEtcdVolumeToPod(pod *v1.Pod, pvc *v1.PersistentVolumeClaim) {
+func AddEtcdVolumeToPod(pod *v1.PodTemplateSpec, pvc *v1.PersistentVolumeClaim) {
 	vol := v1.Volume{Name: etcdVolumeName}
 	if pvc != nil {
 		vol.VolumeSource = v1.VolumeSource{
@@ -354,11 +304,6 @@ func AddEtcdVolumeToPod(pod *v1.Pod, pvc *v1.PersistentVolumeClaim) {
 		vol.VolumeSource = v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}}
 	}
 	pod.Spec.Volumes = append(pod.Spec.Volumes, vol)
-}
-
-func addRecoveryToPod(pod *v1.Pod, token string, m *etcdutil.Member, cs api.ClusterSpec, backupURL *url.URL) {
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers,
-		makeRestoreInitContainers(backupURL, token, cs.Repository, cs.Version, m)...)
 }
 
 func addOwnerRefToObject(o metav1.Object, r metav1.OwnerReference) {
@@ -489,26 +434,11 @@ func CreateNetPolicy(kubecli kubernetes.Interface, clusterName, namespace string
 	return nil
 }
 
-// NewSeedMemberPod returns a Pod manifest for a seed member.
-// It's special that it has new token, and might need recovery init containers
-func NewSeedMemberPod(clusterName string, ms etcdutil.MemberSet, m *etcdutil.Member, cs api.ClusterSpec, owner metav1.OwnerReference, backupURL *url.URL) *v1.Pod {
-	token := uuid.New()
-	pod := newSensuPod(m, ms.PeerURLPairs(), clusterName, "new", token, cs)
-	// TODO: PVC datadir support for restore process
-	AddEtcdVolumeToPod(pod, nil)
-	if backupURL != nil {
-		addRecoveryToPod(pod, token, m, cs, backupURL)
-	}
-	applyPodPolicy(clusterName, pod, cs.Pod)
-	addOwnerRefToObject(pod.GetObjectMeta(), owner)
-	return pod
-}
-
-// NewEtcdPodPVC create PVC object from etcd pod's PVC spec
-func NewSensuPodPVC(m *etcdutil.Member, pvcSpec v1.PersistentVolumeClaimSpec, clusterName, namespace string, owner metav1.OwnerReference) *v1.PersistentVolumeClaim {
+// NewSensuPodPVC create PVC object from etcd pod's PVC spec
+func NewSensuPodPVC(m *etcdutil.MemberConfig, pvcSpec v1.PersistentVolumeClaimSpec, clusterName, namespace string, owner metav1.OwnerReference) *v1.PersistentVolumeClaim {
 	pvc := &v1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      PVCNameFromMember(m.Name),
+			Name:      clusterName,
 			Namespace: namespace,
 			Labels:    LabelsForCluster(clusterName),
 		},
@@ -518,24 +448,36 @@ func NewSensuPodPVC(m *etcdutil.Member, pvcSpec v1.PersistentVolumeClaimSpec, cl
 	return pvc
 }
 
-func newSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state, token string, cs api.ClusterSpec) *v1.Pod {
-	commands := fmt.Sprintf("/usr/local/bin/sensu-backend start --log-level=info --state-dir=%s --name=%s --initial-advertise-peer-urls=%s "+
-		"--listen-peer-urls=%s --listen-client-urls=%s "+
-		"--initial-cluster=%s --initial-cluster-state=%s",
-		stateDir, m.Name, m.PeerURL(), m.ListenPeerURL(), m.ListenClientURL(), strings.Join(initialCluster, ","), state)
+func newSensuPodTemplate(m *etcdutil.MemberConfig, clusterName, token string, cs api.ClusterSpec) *v1.PodTemplateSpec {
+	commands := "/usr/local/bin/sensu-backend start -c /etc/sensu/backend.yml"
+	options := fmt.Sprintf(`log-level: debug
+state-dir: %s
+etcd-name: "$HOSTNAME"
+etcd-initial-advertise-peer-urls: "http://${LOCAL_HOSTNAME}:2380"
+etcd-listen-peer-urls: "%s"
+etcd-listen-client-urls: "%s"
+etcd-initial-cluster: "${INITIAL_CLUSTER}"
+etcd-initial-cluster-state: "${STATE}"
+`, stateDir, m.ListenPeerURL(), m.ListenClientURL())
+
 	if m.SecurePeer {
-		commands += fmt.Sprintf(" --peer-client-cert-auth=true --peer-trusted-ca-file=%[1]s/peer-ca.crt --peer-cert-file=%[1]s/peer.crt --peer-key-file=%[1]s/peer.key", peerTLSDir)
+		options += fmt.Sprintf(`peer-client-cert-auth: true
+etcd-peer-trusted-ca-file: %[1]s/peer-ca.crt
+etcd-peer-cert-file: %[1]s/peer.crt
+etcd-peer-key-file: %[1]s/peer.key
+`, peerTLSDir)
 	}
+
 	if m.SecureClient {
-		commands += fmt.Sprintf(" --client-cert-auth=true --trusted-ca-file=%[1]s/server-ca.crt --cert-file=%[1]s/server.crt --key-file=%[1]s/server.key", serverTLSDir)
-	}
-	if state == "new" {
-		commands = fmt.Sprintf("%s --initial-cluster-token=%s", commands, token)
+		options += fmt.Sprintf(`etcd-lient-cert-auth: true
+etcd-trusted-ca-file: %[1]s/server-ca.crt
+etcd-cert-file=%[1]s/server.crt
+etcd-key-file: %[1]s/server.key
+`, serverTLSDir)
 	}
 
 	labels := map[string]string{
 		"app":           "sensu",
-		"sensu_node":    m.Name,
 		"sensu_cluster": clusterName,
 	}
 
@@ -546,10 +488,15 @@ func newSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state
 	readinessProbe.PeriodSeconds = 5
 	readinessProbe.FailureThreshold = 3
 
+	configVolumeMount := v1.VolumeMount{
+		Name:      "etcsensu",
+		MountPath: "/etc/sensu",
+	}
 	container := containerWithProbes(
 		sensuContainer(strings.Split(commands, " "), cs.Repository, cs.Version),
 		livenessProbe,
 		readinessProbe)
+	container.VolumeMounts = append(container.VolumeMounts, configVolumeMount)
 
 	volumes := []v1.Volume{}
 
@@ -576,30 +523,40 @@ func newSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state
 			Secret: &v1.SecretVolumeSource{SecretName: cs.TLS.Static.OperatorSecret},
 		}})
 	}
+	volumes = append(volumes, v1.Volume{
+		Name: "etcsensu",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	})
 
 	DNSTimeout := defaultDNSTimeout
 	if cs.Pod != nil {
 		DNSTimeout = cs.Pod.DNSTimeoutInSecond
 	}
-	pod := &v1.Pod{
+	podTemplateSpec := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        m.Name,
+			Name:        clusterName,
 			Labels:      labels,
 			Annotations: map[string]string{},
 		},
 		Spec: v1.PodSpec{
-			InitContainers: []v1.Container{{
-				// busybox:latest uses uclibc which contains a bug that sometimes prevents name resolution
-				// More info: https://github.com/docker-library/busybox/issues/27
-				//Image default: "busybox:1.28.0-glibc",
-				Image: imageNameBusybox(cs.Pod),
-				Name:  "check-dns",
-				// In etcd 3.2, TLS listener will do a reverse-DNS lookup for pod IP -> hostname.
-				// If DNS entry is not warmed up, it will return empty result and peer connection will be rejected.
-				// In some cases the DNS is not created correctly so we need to time out after a given period.
-				Command: []string{"/bin/sh", "-c", fmt.Sprintf(`
+			InitContainers: []v1.Container{
+				{
+					// busybox:latest uses uclibc which contains a bug that sometimes prevents name resolution
+					// More info: https://github.com/docker-library/busybox/issues/27
+					//Image default: "busybox:1.28.0-glibc",
+					Image: imageNameBusybox(cs.Pod),
+					Name:  "check-dns",
+					// In etcd 3.2, TLS listener will do a reverse-DNS lookup for pod IP -> hostname.
+					// If DNS entry is not warmed up, it will return empty result and peer connection will be rejected.
+					// In some cases the DNS is not created correctly so we need to time out after a given period.
+					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`
 					TIMEOUT_READY=%d
-					while ( ! nslookup %s )
+					SUBDOMAIN=%s
+					NAMESPACE=%s
+					LOCAL_HOSTNAME=$(hostname).${SUBDOMAIN}.${NAMESPACE}.svc
+					while ( ! nslookup $LOCAL_HOSTNAME )
 					do
 						# If TIMEOUT_READY is 0 we should never time out and exit
 						TIMEOUT_READY=$(( TIMEOUT_READY-1 ))
@@ -609,22 +566,51 @@ func newSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state
 				            exit 1
 				        fi
 						sleep 1
-					done`, DNSTimeout, m.Addr())},
-			}},
+					done`, DNSTimeout, clusterName, m.Namespace)},
+				},
+				{
+					Image: imageNameBusybox(cs.Pod),
+					Name:  "make-sensu-config",
+					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`HOSTNAME=$(hostname)
+TOKEN=%s
+SUBDOMAIN=%s
+NAMESPACE=%s
+LOCAL_HOSTNAME=${HOSTNAME}.${SUBDOMAIN}.${NAMESPACE}.svc
+SEED_NAME=${SUBDOMAIN}-0
+SEED_HOSTNAME=${SEED_NAME}.${SUBDOMAIN}.${NAMESPACE}.svc
+INITIAL_CLUSTER="${HOSTNAME}=http://${LOCAL_HOSTNAME}:2380"
+STATE="new"
+if [[ $(expr match "${HOSTNAME}" ".*-0") -eq 0 ]]
+then
+    STATE="existing"
+	INITIAL_CLUSTER="${SEED_NAME}=${INITIAL_CLUSTER},http://${SEED_HOSTNAME}:2380"
+fi
+if [[ "${STATE}" == "new" ]]
+then
+    echo "etcd-initial-cluster-token: ${TOKEN}" >> /etc/sensu/backend.yml
+fi
+cat >> /etc/sensu/backend.yml <<EOL
+%s
+EOL
+cat /etc/sensu/backend.yml
+`, token, clusterName, m.Namespace, options)},
+					VolumeMounts: []v1.VolumeMount{configVolumeMount},
+				},
+			},
 			Containers:    []v1.Container{container},
-			RestartPolicy: v1.RestartPolicyNever,
+			RestartPolicy: v1.RestartPolicyAlways,
 			Volumes:       volumes,
 			// DNS A record: `[m.Name].[clusterName].Namespace.svc`
 			// For example, etcd-795649v9kq in default namesapce will have DNS name
 			// `etcd-795649v9kq.etcd.default.svc`.
-			Hostname:                     m.Name,
 			Subdomain:                    clusterName,
 			AutomountServiceAccountToken: func(b bool) *bool { return &b }(false),
 			SecurityContext:              podSecurityContext(cs.Pod),
 		},
 	}
-	SetSensuVersion(pod, cs.Version)
-	return pod
+
+	SetPodTemplateSensuVersion(&podTemplateSpec, cs.Version)
+	return &podTemplateSpec
 }
 
 func podSecurityContext(podPolicy *api.PodPolicy) *v1.PodSecurityContext {
@@ -634,13 +620,27 @@ func podSecurityContext(podPolicy *api.PodPolicy) *v1.PodSecurityContext {
 	return podPolicy.SecurityContext
 }
 
-func NewSensuPod(m *etcdutil.Member, initialCluster []string, clusterName, state, token string, cs api.ClusterSpec, owner metav1.OwnerReference) *v1.Pod {
-	pod := newSensuPod(m, initialCluster, clusterName, state, token, cs)
-	applyPodPolicy(clusterName, pod, cs.Pod)
-	addOwnerRefToObject(pod.GetObjectMeta(), owner)
-	return pod
+// NewSensuStatefulSet creates a new StatefulSet for a Sensu cluster
+func NewSensuStatefulSet(m *etcdutil.MemberConfig, clusterName, token string, cs api.ClusterSpec, owner metav1.OwnerReference) *appsv1beta1.StatefulSet {
+	podTemplate := newSensuPodTemplate(m, clusterName, token, cs)
+	applyPodPolicy(clusterName, podTemplate, cs.Pod)
+	addOwnerRefToObject(podTemplate.GetObjectMeta(), owner)
+	statefulSet := &appsv1beta1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: clusterName,
+		},
+		Spec: appsv1beta1.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: podTemplate.ObjectMeta.Labels,
+			},
+			Template:    *podTemplate,
+			ServiceName: clusterName,
+		},
+	}
+	return statefulSet
 }
 
+// MustNewKubeClient creates a new Kubernetes client with an in cluster config or panics
 func MustNewKubeClient() kubernetes.Interface {
 	cfg, err := InClusterConfig()
 	if err != nil {
@@ -677,7 +677,7 @@ func IsKubernetesResourceNotFoundError(err error) bool {
 	return apierrors.IsNotFound(err)
 }
 
-// We are using internal api types for cluster related.
+// ClusterListOpt returns the ListOptions for selecting a Cluster
 func ClusterListOpt(clusterName string) metav1.ListOptions {
 	return metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(LabelsForCluster(clusterName)).String(),
@@ -707,31 +707,6 @@ func CreatePatch(o, n, datastruct interface{}) ([]byte, error) {
 		return nil, err
 	}
 	return strategicpatch.CreateTwoWayMergePatch(oldData, newData, datastruct)
-}
-
-func PatchDeployment(kubecli kubernetes.Interface, namespace, name string, updateFunc func(*appsv1beta1.Deployment)) error {
-	od, err := kubecli.AppsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	nd := od.DeepCopy()
-	updateFunc(nd)
-	patchData, err := CreatePatch(od, nd, appsv1beta1.Deployment{})
-	if err != nil {
-		return err
-	}
-	_, err = kubecli.AppsV1beta1().Deployments(namespace).Patch(name, types.StrategicMergePatchType, patchData)
-	return err
-}
-
-func CascadeDeleteOptions(gracePeriodSeconds int64) *metav1.DeleteOptions {
-	return &metav1.DeleteOptions{
-		GracePeriodSeconds: func(t int64) *int64 { return &t }(gracePeriodSeconds),
-		PropagationPolicy: func() *metav1.DeletionPropagation {
-			foreground := metav1.DeletePropagationForeground
-			return &foreground
-		}(),
-	}
 }
 
 // mergeLabels merges l2 into l1. Conflicting label will be skipped.

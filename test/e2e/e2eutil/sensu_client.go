@@ -26,13 +26,11 @@ func NewSensuClient(apiURL string) (*client.RestClient, error) {
 			APIUrl: apiURL,
 		},
 		Profile: basic.Profile{
-			Environment:  "default",
-			Format:       "none",
-			Organization: "default",
+			Format: "none",
 		},
 	}
 	sensuClient := client.New(sensuClientConfig)
-	tokens, _, err := sensuClient.CreateAccessToken(apiURL, "admin", "P@ssw0rd!")
+	tokens, err := sensuClient.CreateAccessToken(apiURL, "admin", "P@ssw0rd!")
 	if err != nil {
 		return nil, err
 	}
