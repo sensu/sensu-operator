@@ -30,15 +30,17 @@ func (c *Controller) onDeleteSensuCheckConfig(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
-	err := sensuClient.DeleteCheckConfig(checkConfig)
-	if err != nil {
-		c.logger.Warningf("failed to handle checkconfig delete event: %v", err)
-		return
+	if c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
+		sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
+		err := sensuClient.DeleteCheckConfig(checkConfig)
+		if err != nil {
+			c.logger.Warningf("failed to handle checkconfig delete event: %v", err)
+			return
+		}
 	}
 	cc := checkConfig.DeepCopy()
 	cc.Finalizers = make([]string, 0)
-	if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(checkConfig.GetNamespace()).Update(cc); err != nil {
+	if _, err := c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(checkConfig.GetNamespace()).Update(cc); err != nil {
 		c.logger.Warningf("failed to update checkconfig to remove finalizer: %+v", err)
 	}
 }
@@ -48,7 +50,12 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 	c.logger.Debugf("in syncSensuCheckConfig, about to update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
 	// Ensure that the finalizer exists, failing if it can't be added at this time
-	if len(checkConfig.Finalizers) == 0 && checkConfig.DeletionTimestamp == nil {
+	if checkConfig.DeletionTimestamp != nil {
+		c.logger.Debugf("checkConfig.DeletionTimestamp != nil.  Not syncing.")
+		return
+	}
+
+	if len(checkConfig.Finalizers) == 0 {
 		copy := checkConfig.DeepCopy()
 		copy.Finalizers = append(copy.Finalizers, "asset.finalizer.objectrocket.com")
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuCheckConfigs(copy.GetNamespace()).Update(copy); err != nil {
@@ -57,6 +64,7 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 			return
 		}
 	}
+
 	if !c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
 		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply checkConfig: %+v", checkConfig.Spec.SensuMetadata.ClusterName, checkConfig)
 		copy := checkConfig.DeepCopy()

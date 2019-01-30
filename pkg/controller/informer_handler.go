@@ -29,15 +29,17 @@ func (c *Controller) onDeleteSensuHandler(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
-	err := sensuClient.DeleteHandler(handler)
-	if err != nil {
-		c.logger.Warningf("failed to handle handler delete event: %v", err)
-		return
+	if c.clusterExists(handler.Spec.SensuMetadata.ClusterName) {
+		sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+		err := sensuClient.DeleteHandler(handler)
+		if err != nil {
+			c.logger.Warningf("failed to handle handler delete event: %v", err)
+			return
+		}
 	}
 	cc := handler.DeepCopy()
 	cc.Finalizers = make([]string, 0)
-	if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuHandlers(handler.GetNamespace()).Update(cc); err != nil {
+	if _, err := c.SensuCRCli.ObjectrocketV1beta1().SensuHandlers(handler.GetNamespace()).Update(cc); err != nil {
 		c.logger.Warningf("failed to update handler to remove finalizer: %+v", err)
 	}
 }
@@ -46,6 +48,10 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 	var err error
 	c.logger.Debugf("in syncSensuHandler, about to update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+	if handler.DeletionTimestamp != nil {
+		c.logger.Debugf("handler.DeletionTimestamp != nil.  Not syncing.")
+		return
+	}
 	// Ensure that the finalizer exists, failing if it can't be added at this time
 	if len(handler.Finalizers) == 0 && handler.DeletionTimestamp == nil {
 		copy := handler.DeepCopy()

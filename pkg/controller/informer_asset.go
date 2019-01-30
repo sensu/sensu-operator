@@ -29,24 +29,31 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 			panic(fmt.Sprintf("Tombstone contained object that is not a Asset: %#v", obj))
 		}
 	}
-
-	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
-	err := sensuClient.DeleteAsset(asset)
-	if err != nil {
-		c.logger.Warningf("failed to handle asset delete event: %v", err)
-		return
+	if c.clusterExists(asset.Spec.SensuMetadata.ClusterName) {
+		sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+		err := sensuClient.DeleteAsset(asset)
+		if err != nil {
+			c.logger.Warningf("failed to handle asset delete event: %v", err)
+			return
+		}
 	}
 	a := asset.DeepCopy()
 	a.Finalizers = make([]string, 0)
-	if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(asset.GetNamespace()).Update(a); err != nil {
+	if _, err := c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(asset.GetNamespace()).Update(a); err != nil {
 		c.logger.Warningf("failed to update asset to remove finalizer: %+v", err)
 	}
 }
 
 func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
 	var err error
+	c.logger.Debugf("in syncSensuAsset, about to update asset within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
+		asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+	if asset.DeletionTimestamp != nil {
+		c.logger.Debugf("asset.DeletionTimestamp != nil.  Not syncing")
+		return
+	}
 	// Ensure that the finalizer exists, failing if it can't be added at this time
-	if len(asset.Finalizers) == 0 && asset.DeletionTimestamp == nil {
+	if len(asset.Finalizers) == 0 {
 		copy := asset.DeepCopy()
 		copy.Finalizers = append(copy.Finalizers, "checkconfig.finalizer.objectrocket.com")
 		if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuAssets(copy.GetNamespace()).Update(copy); err != nil {
@@ -55,6 +62,7 @@ func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
 			return
 		}
 	}
+
 	if !c.clusterExists(asset.Spec.SensuMetadata.ClusterName) {
 		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply asset: %+v", asset.Spec.SensuMetadata.ClusterName, asset)
 		copy := asset.DeepCopy()

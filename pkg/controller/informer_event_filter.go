@@ -29,15 +29,17 @@ func (c *Controller) onDeleteSensuEventFilter(obj interface{}) {
 		}
 	}
 
-	sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
-	err := sensuClient.DeleteEventFilter(filter)
-	if err != nil {
-		c.logger.Warningf("failed to handle event filter delete event: %v", err)
-		return
+	if c.clusterExists(filter.Spec.SensuMetadata.ClusterName) {
+		sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
+		err := sensuClient.DeleteEventFilter(filter)
+		if err != nil {
+			c.logger.Warningf("failed to handle event filter delete event: %v", err)
+			return
+		}
 	}
 	copy := filter.DeepCopy()
 	copy.Finalizers = make([]string, 0)
-	if _, err = c.SensuCRCli.ObjectrocketV1beta1().SensuEventFilters(filter.GetNamespace()).Update(copy); err != nil {
+	if _, err := c.SensuCRCli.ObjectrocketV1beta1().SensuEventFilters(filter.GetNamespace()).Update(copy); err != nil {
 		c.logger.Warningf("failed to update filter to remove finalizer: %+v", err)
 	}
 }
@@ -46,6 +48,10 @@ func (c *Controller) syncSensuEventFilter(filter *api.SensuEventFilter) {
 	var err error
 	c.logger.Debugf("in syncSensuEventFilter, about to update filter within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
+	if filter.DeletionTimestamp != nil {
+		c.logger.Debugf("filter.DeletionTimestamp != nil.  Not syncing.")
+		return
+	}
 	// Ensure that the finalizer exists, failing if it can't be added at this time
 	if len(filter.Finalizers) == 0 && filter.DeletionTimestamp == nil {
 		copy := filter.DeepCopy()

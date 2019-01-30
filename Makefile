@@ -7,7 +7,6 @@ export SHELL := /bin/bash
 # Get docker path or an empty string
 DOCKER := $(shell command -v docker)
 
-IMAGE ?= objectrocket/sensu-operator:v0.0.1
 DOCKER_IMAGE = objectrocket/sensu-operator
 # allow builds without tags
 IMAGE_VERSION ?= latest
