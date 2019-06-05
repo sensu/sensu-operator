@@ -16,11 +16,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/objectrocket/sensu-operator/pkg/client"
@@ -33,6 +33,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -56,19 +58,58 @@ var (
 	clusterWide       bool
 	workerThreads     int
 	processingRetries int
+
+	rootCmd = &cobra.Command{
+		Use:   "sensu-operator",
+		Short: "Kubernetes operator for Sensu",
+		Long:  "Kubernetes operator for Sensu",
+		Run: func(cmd *cobra.Command, args []string) {
+			mainLoop()
+		},
+	}
 )
 
 func init() {
-	flag.StringVar(&listenAddr, "listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
-	flag.StringVar(&logLevel, "log-level", "info", "The logging level (debug/info/warn/error/none")
-	flag.BoolVar(&printVersion, "version", false, "Show version and quit")
-	flag.BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
-	flag.DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
-	flag.DurationVar(&resyncInterval, "resync-interval", 5*time.Minute, "How often to refresh/resync all Custom Resources")
-	flag.BoolVar(&clusterWide, "cluster-wide", false, "Enable operator to watch clusters in all namespaces")
-	flag.IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
-	flag.IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
-	flag.Parse()
+	viper.SetEnvPrefix("SENSUOP")
+	// viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
+	// Flags that should be handled by default env-vars
+	envFlags := [...]string{
+		"listen-addr",
+		"log-level",
+		"create-crd",
+		"cluster-wide",
+		"gc-interval",
+		"resync-interval",
+		"worker-threads",
+		"processing-retries",
+	}
+
+	rootCmd.PersistentFlags().StringVar(&listenAddr, "listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "The logging level (debug/info/warn/error/none")
+	rootCmd.PersistentFlags().BoolVar(&printVersion, "version", false, "Show version and quit")
+	rootCmd.PersistentFlags().BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
+	rootCmd.PersistentFlags().BoolVar(&clusterWide, "cluster-wide", false, "Enable operator to watch clusters in all namespaces")
+	rootCmd.PersistentFlags().DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
+	rootCmd.PersistentFlags().DurationVar(&resyncInterval, "resync-interval", 5*time.Minute, "How often to refresh/resync all Custom Resources")
+	rootCmd.PersistentFlags().IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
+	rootCmd.PersistentFlags().IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
+
+	for _, flag := range envFlags {
+		viper.BindEnv(flag)
+		viper.BindPFlag(flag, rootCmd.PersistentFlags().Lookup(flag))
+	}
+
+	listenAddr = viper.GetString("listen-addr")
+	logLevel = viper.GetString("log-level")
+	createCRD = viper.GetBool("create-crd")
+	clusterWide = viper.GetBool("cluster-wide")
+	gcInterval = viper.GetDuration("gc-interval")
+	resyncInterval = viper.GetDuration("resync-interval")
+	workerThreads = viper.GetInt("worker-threads")
+	processingRetries = viper.GetInt("processing-retries")
+
 	if level, err := logrus.ParseLevel(logLevel); err != nil {
 		logrus.Fatalf("invalid log-level %s", logLevel)
 	} else {
@@ -78,6 +119,10 @@ func init() {
 }
 
 func main() {
+	rootCmd.Execute()
+}
+
+func mainLoop() {
 	namespace = os.Getenv(constants.EnvOperatorPodNamespace)
 	if len(namespace) == 0 {
 		logrus.Fatalf("must set env (%s)", constants.EnvOperatorPodNamespace)
@@ -99,6 +144,9 @@ func main() {
 	logrus.Infof("Git SHA: %s", version.GitSHA)
 	logrus.Infof("Go Version: %s", runtime.Version())
 	logrus.Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
+	logrus.Infof("Listen Address: %s", listenAddr)
+	logrus.Infof("Watching Cluster Wide: Value: %t", clusterWide)
+	logrus.Infof("Creating CRDs if they don't exist: %t", createCRD)
 
 	id, err := os.Hostname()
 	if err != nil {
