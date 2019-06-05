@@ -86,15 +86,15 @@ func init() {
 		"processing-retries",
 	}
 
-	rootCmd.PersistentFlags().StringVar(&listenAddr, "listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "The logging level (debug/info/warn/error/none")
-	rootCmd.PersistentFlags().BoolVar(&printVersion, "version", false, "Show version and quit")
-	rootCmd.PersistentFlags().BoolVar(&createCRD, "create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
-	rootCmd.PersistentFlags().BoolVar(&clusterWide, "cluster-wide", false, "Enable operator to watch clusters in all namespaces")
-	rootCmd.PersistentFlags().DurationVar(&gcInterval, "gc-interval", 10*time.Minute, "GC interval")
-	rootCmd.PersistentFlags().DurationVar(&resyncInterval, "resync-interval", 5*time.Minute, "How often to refresh/resync all Custom Resources")
-	rootCmd.PersistentFlags().IntVar(&workerThreads, "worker-threads", 4, "Number of worker threads to use for processing events")
-	rootCmd.PersistentFlags().IntVar(&processingRetries, "processing-retries", 5, "Number of times to retry processing an event before giving up")
+	rootCmd.PersistentFlags().String("listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
+	rootCmd.PersistentFlags().String("log-level", "info", "The logging level (debug/info/warn/error/none")
+	rootCmd.PersistentFlags().Bool("version", false, "Show version and quit")
+	rootCmd.PersistentFlags().Bool("create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
+	rootCmd.PersistentFlags().Bool("cluster-wide", false, "Enable operator to watch clusters in all namespaces")
+	rootCmd.PersistentFlags().Duration("gc-interval", 10*time.Minute, "GC interval")
+	rootCmd.PersistentFlags().Duration("resync-interval", 5*time.Minute, "How often to refresh/resync all Custom Resources")
+	rootCmd.PersistentFlags().Int("worker-threads", 4, "Number of worker threads to use for processing events")
+	rootCmd.PersistentFlags().Int("processing-retries", 5, "Number of times to retry processing an event before giving up")
 
 	for _, flag := range envFlags {
 		viper.BindEnv(flag)
