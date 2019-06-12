@@ -28,7 +28,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
         - containerPort: 8080
-          name: http        
+          name: http
         resources:
           limits:
           {{- range .Values.resourceSettings.limit }}
@@ -47,6 +47,18 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: SENSUOP_LOG_LEVEL
+          value: {{ .Values.sensu.logLevel | quote }}
+        - name: SENSUOP_CLUSTER_WIDE
+          value: {{ .Values.sensu.clusterWide | quote }}
+        - name: SENSUOP_RESYNC_INTERVAL
+          value: {{ .Values.sensu.resyncInterval | quote }}
+        - name: SENSUOP_GC_INTERVAL
+          value: {{ .Values.sensu.gcInterval | quote }}
+        - name: SENSUOP_WORKER_THREADS
+          value: {{ .Values.sensu.workerThreads | quote }}
+        - name: SENSUOP_PROCESSING_RETRIES
+          value: {{ .Values.sensu.processingRetries | quote }}
       imagePullSecrets:
       - name: {{ .Values.imagePullSecret.name }}
 {{- if .Values.tolerations }}

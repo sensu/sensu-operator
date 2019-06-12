@@ -40,8 +40,17 @@ rbac:
   clusterRole: sensu-operator
 
 sensu:
+  logLevel: info
    # To act for resources in all namespaces. More information in doc/clusterwide.md
-  clusterWide: false
+  clusterWide: true
+  # GC interval
+  gcInterval: 10m
+  # How often to refresh/resync all Custom Resources
+  resyncInterval: 5m
+  # Number of worker threads to use for processing events
+  workerThreads: 4
+  # Number of times to retry processing an event before giving up
+  processingRetries: 5
 
 prometheus:
   enabled: true
