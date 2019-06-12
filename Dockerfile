@@ -1,8 +1,9 @@
 # build stage
 FROM golang:1.10 AS build-env
+ARG APPVERSION=latest
 WORKDIR /go/src/github.com/objectrocket/sensu-operator
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o _output/sensu-operator -i cmd/operator/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-X github.com/objectrocket/sensu-operator/version.Version=$APPVERSION" -o _output/sensu-operator -i cmd/operator/main.go
 
 FROM alpine:3.6
 RUN apk add --no-cache ca-certificates

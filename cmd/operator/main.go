@@ -88,7 +88,7 @@ func init() {
 
 	rootCmd.PersistentFlags().String("listen-addr", "0.0.0.0:8080", "The address on which the HTTP server will listen to")
 	rootCmd.PersistentFlags().String("log-level", "info", "The logging level (debug/info/warn/error/none")
-	rootCmd.PersistentFlags().Bool("version", false, "Show version and quit")
+	rootCmd.PersistentFlags().BoolVarP(&printVersion, "version", "", false, "Show version and quit")
 	rootCmd.PersistentFlags().Bool("create-crd", true, "The operator will not create the SensuCluster CRD when this flag is set to false.")
 	rootCmd.PersistentFlags().Bool("cluster-wide", false, "Enable operator to watch clusters in all namespaces")
 	rootCmd.PersistentFlags().Duration("gc-interval", 10*time.Minute, "GC interval")
@@ -123,6 +123,14 @@ func main() {
 }
 
 func mainLoop() {
+	if printVersion {
+		fmt.Println("sensu-operator Version:", version.Version)
+		fmt.Println("Git SHA:", version.GitSHA)
+		fmt.Println("Go Version:", runtime.Version())
+		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
+
 	namespace = os.Getenv(constants.EnvOperatorPodNamespace)
 	if len(namespace) == 0 {
 		logrus.Fatalf("must set env (%s)", constants.EnvOperatorPodNamespace)
@@ -130,14 +138,6 @@ func mainLoop() {
 	name = os.Getenv(constants.EnvOperatorPodName)
 	if len(name) == 0 {
 		logrus.Fatalf("must set env (%s)", constants.EnvOperatorPodName)
-	}
-
-	if printVersion {
-		fmt.Println("sensu-operator Version:", version.Version)
-		fmt.Println("Git SHA:", version.GitSHA)
-		fmt.Println("Go Version:", runtime.Version())
-		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
-		os.Exit(0)
 	}
 
 	logrus.Infof("sensu-operator Version: %v", version.Version)

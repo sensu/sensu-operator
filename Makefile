@@ -38,7 +38,7 @@ clean:
 	@go clean
 
 docker-build: deps-development
-	docker build -t $(DOCKER_IMAGE):$(IMAGE_VERSION) .
+	docker build --build-arg APPVERSION=$(IMAGE_VERSION) -t $(DOCKER_IMAGE):$(IMAGE_VERSION) .
 
 docker-push: docker-build
 	docker push $(DOCKER_IMAGE):$(IMAGE_VERSION)
