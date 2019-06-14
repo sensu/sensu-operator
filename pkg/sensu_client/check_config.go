@@ -41,7 +41,7 @@ func (s *SensuClient) DeleteCheckConfig(c *v1beta1.SensuCheckConfig) error {
 
 	go func() {
 		var err error
-		if err = s.sensuCli.Client.DeleteCheck(c.ToSensuType()); err != nil {
+		if err = s.sensuCli.Client.DeleteCheck(c.Namespace, c.Name); err != nil {
 			s.logger.Errorf("failed to delete checkconfig: %+v", err)
 		}
 		c1 <- err

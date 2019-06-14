@@ -4,6 +4,8 @@ import (
 	"errors"
 	fmt "fmt"
 	"net/url"
+	"sort"
+	"strings"
 )
 
 const (
@@ -79,6 +81,49 @@ func (s *HandlerSocket) Validate() error {
 	return nil
 }
 
+//
+// Sorting
+
+type cmpHandler func(a, b *Handler) bool
+
+// SortHandlersByPredicate is used to sort a given collection using a given predicate.
+func SortHandlersByPredicate(hs []*Handler, fn cmpHandler) sort.Interface {
+	return &handlerSorter{handlers: hs, byFn: fn}
+}
+
+// SortHandlersByName is used to sort a given collection of handlers by their names.
+func SortHandlersByName(hs []*Handler, asc bool) sort.Interface {
+	if asc {
+		return SortHandlersByPredicate(hs, func(a, b *Handler) bool {
+			return a.Name < b.Name
+		})
+	}
+
+	return SortHandlersByPredicate(hs, func(a, b *Handler) bool {
+		return a.Name > b.Name
+	})
+}
+
+type handlerSorter struct {
+	handlers []*Handler
+	byFn     cmpHandler
+}
+
+// Len implements sort.Interface
+func (s *handlerSorter) Len() int {
+	return len(s.handlers)
+}
+
+// Swap implements sort.Interface
+func (s *handlerSorter) Swap(i, j int) {
+	s.handlers[i], s.handlers[j] = s.handlers[j], s.handlers[i]
+}
+
+// Less implements sort.Interface
+func (s *handlerSorter) Less(i, j int) bool {
+	return s.byFn(s.handlers[i], s.handlers[j])
+}
+
 // FixtureHandler returns a Handler fixture for testing.
 func FixtureHandler(name string) *Handler {
 	return &Handler{
@@ -109,4 +154,17 @@ func FixtureSetHandler(name string, handlers ...string) *Handler {
 // URIPath returns the path component of a Handler URI.
 func (h *Handler) URIPath() string {
 	return fmt.Sprintf("/api/core/v2/namespaces/%s/handlers/%s", url.PathEscape(h.Namespace), url.PathEscape(h.Name))
+}
+
+// HandlerFields returns a set of fields that represent that resource
+func HandlerFields(r Resource) map[string]string {
+	resource := r.(*Handler)
+	return map[string]string{
+		"handler.name":      resource.ObjectMeta.Name,
+		"handler.namespace": resource.ObjectMeta.Namespace,
+		"handler.filters":   strings.Join(resource.Filters, ","),
+		"handler.handlers":  strings.Join(resource.Handlers, ","),
+		"handler.mutator":   resource.Mutator,
+		"handler.type":      resource.Type,
+	}
 }

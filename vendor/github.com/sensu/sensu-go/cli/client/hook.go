@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
@@ -49,19 +50,8 @@ func (client *RestClient) UpdateHook(hook *types.HookConfig) (err error) {
 }
 
 // DeleteHook deletes hook from configured Sensu instance
-func (client *RestClient) DeleteHook(hook *types.HookConfig) error {
-	path := hooksPath(hook.Namespace, hook.Name)
-	res, err := client.R().Delete(path)
-
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode() >= 400 {
-		return UnmarshalError(res)
-	}
-
-	return nil
+func (client *RestClient) DeleteHook(namespace, name string) error {
+	return client.Delete(hooksPath(namespace, name))
 }
 
 // FetchHook fetches a specific hook
@@ -83,19 +73,12 @@ func (client *RestClient) FetchHook(name string) (*types.HookConfig, error) {
 }
 
 // ListHooks fetches all hooks from configured Sensu instance
-func (client *RestClient) ListHooks(namespace string) ([]types.HookConfig, error) {
-	var hooks []types.HookConfig
+func (client *RestClient) ListHooks(namespace string, options *ListOptions) ([]corev2.HookConfig, error) {
+	var hooks []corev2.HookConfig
 
-	path := hooksPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(hooksPath(namespace), &hooks, options); err != nil {
 		return hooks, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return hooks, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &hooks)
-	return hooks, err
+	return hooks, nil
 }

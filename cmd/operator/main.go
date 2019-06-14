@@ -171,7 +171,7 @@ func mainLoop() {
 		logrus.Fatalf("error creating lock: %v", err)
 	}
 
-	leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+	leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
 		Lock:          rl,
 		LeaseDuration: 15 * time.Second,
 		RenewDeadline: 10 * time.Second,
@@ -187,14 +187,14 @@ func mainLoop() {
 	panic("unreachable")
 }
 
-func run(stop <-chan struct{}) {
+func run(ctx context.Context) {
 	cfg := newControllerConfig()
 
 	c := controller.New(cfg)
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	go c.Start(ctx)
 	select {
-	case <-stop:
+	case <-ctx.Done():
 		cancelFunc()
 	}
 }

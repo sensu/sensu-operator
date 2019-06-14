@@ -52,8 +52,7 @@ func New(clusterName, namespace string, sensuNamespace string) *SensuClient {
 	sClient.logger.Debugf("makeFullyQualifiedSensuClientURL returns: %s", sClient.makeFullyQualifiedSensuClientURL())
 	conf := basic.Config{
 		Cluster: basic.Cluster{
-			APIUrl:  fmt.Sprintf("http://%s:8080", sClient.makeFullyQualifiedSensuClientURL()),
-			Edition: "enterprise",
+			APIUrl: fmt.Sprintf("http://%s:8080", sClient.makeFullyQualifiedSensuClientURL()),
 		},
 		Profile: basic.Profile{
 			Format:    "json",
@@ -115,9 +114,8 @@ func (s *SensuClient) ensureCredentials() (err error) {
 
 		conf := basic.Config{
 			Cluster: basic.Cluster{
-				APIUrl:  s.sensuCli.Config.APIUrl(),
-				Edition: "enterprise",
-				Tokens:  tokens,
+				APIUrl: s.sensuCli.Config.APIUrl(),
+				Tokens: tokens,
 			},
 			Profile: basic.Profile{
 				Format:    "json",

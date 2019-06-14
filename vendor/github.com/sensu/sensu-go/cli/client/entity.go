@@ -3,16 +3,15 @@ package client
 import (
 	"encoding/json"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
 var entitiesPath = createNSBasePath(coreAPIGroup, coreAPIVersion, "entities")
 
 // DeleteEntity deletes given entitiy from the configured sensu instance
-func (client *RestClient) DeleteEntity(entity *types.Entity) (err error) {
-	path := entitiesPath(client.config.Namespace(), entity.Name)
-	_, err = client.R().Delete(path)
-	return err
+func (client *RestClient) DeleteEntity(namespace, name string) (err error) {
+	return client.Delete(entitiesPath(namespace, name))
 }
 
 // FetchEntity fetches a specific entity
@@ -34,21 +33,14 @@ func (client *RestClient) FetchEntity(name string) (*types.Entity, error) {
 }
 
 // ListEntities fetches all entities from configured Sensu instance
-func (client *RestClient) ListEntities(namespace string) ([]types.Entity, error) {
-	var entities []types.Entity
+func (client *RestClient) ListEntities(namespace string, options *ListOptions) ([]corev2.Entity, error) {
+	var entities []corev2.Entity
 
-	path := entitiesPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(entitiesPath(namespace), &entities, options); err != nil {
 		return entities, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return entities, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &entities)
-	return entities, err
+	return entities, nil
 }
 
 // UpdateEntity updates given entity on configured Sensu instance

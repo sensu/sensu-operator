@@ -4,27 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
 var assetsPath = createNSBasePath(coreAPIGroup, coreAPIVersion, "assets")
 
 // ListAssets fetches a list of asset resources from the backend
-func (client *RestClient) ListAssets(namespace string) ([]types.Asset, error) {
-	var assets []types.Asset
+func (client *RestClient) ListAssets(namespace string, options *ListOptions) ([]corev2.Asset, error) {
+	var assets []corev2.Asset
 
-	path := assetsPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(assetsPath(namespace), &assets, options); err != nil {
 		return assets, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return assets, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &assets)
-	return assets, err
+	return assets, nil
 }
 
 // FetchAsset fetches an asset resource from the backend
@@ -63,7 +57,7 @@ func (client *RestClient) CreateAsset(asset *types.Asset) error {
 	}
 
 	if res.StatusCode() >= 400 {
-		return fmt.Errorf("%v", res.String())
+		return UnmarshalError(res)
 	}
 
 	return nil
@@ -83,7 +77,7 @@ func (client *RestClient) UpdateAsset(asset *types.Asset) (err error) {
 	}
 
 	if res.StatusCode() >= 400 {
-		return fmt.Errorf("PUT %q: %s", path, res.String())
+		return UnmarshalError(res)
 	}
 
 	return nil

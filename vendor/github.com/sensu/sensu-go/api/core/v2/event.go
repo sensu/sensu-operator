@@ -5,7 +5,11 @@ import (
 	fmt "fmt"
 	"net/url"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
+
+	stringsutil "github.com/sensu/sensu-go/util/strings"
 )
 
 // EventFailingState indicates failing check result status
@@ -17,7 +21,7 @@ const EventFlappingState = "flapping"
 // EventPassingState indicates successful check result status
 const EventPassingState = "passing"
 
-// FixtureEvent returns a testing fixutre for an Event object.
+// FixtureEvent returns a testing fixture for an Event object.
 func FixtureEvent(entityName, checkID string) *Event {
 	return &Event{
 		ObjectMeta: NewObjectMeta("", "default"),
@@ -104,7 +108,7 @@ func (e *Event) IsSilenced() bool {
 	return len(e.Check.Silenced) > 0
 }
 
-// Implements dynamic.SynthesizeExtras
+// SynthesizeExtras implements dynamic.SynthesizeExtras
 func (e *Event) SynthesizeExtras() map[string]interface{} {
 	return map[string]interface{}{
 		"has_check":     e.HasCheck(),
@@ -278,4 +282,90 @@ func (e *Event) URIPath() string {
 		return ""
 	}
 	return fmt.Sprintf("/api/core/v2/namespaces/%s/events/%s/%s", url.PathEscape(e.Entity.Namespace), url.PathEscape(e.Entity.Name), url.PathEscape(e.Check.Name))
+}
+
+// SilencedBy returns the subset of given silences, that silence the event.
+func (e *Event) SilencedBy(entries []*Silenced) []*Silenced {
+	silencedBy := make([]*Silenced, 0, len(entries))
+	if !e.HasCheck() {
+		return silencedBy
+	}
+
+	// Loop through every silenced entries in order to determine if it applies to
+	// the given event
+	for _, entry := range entries {
+		if e.IsSilencedBy(entry) {
+			silencedBy = append(silencedBy, entry)
+		}
+	}
+
+	return silencedBy
+}
+
+// IsSilencedBy returns true if given silence will silence the event.
+func (e *Event) IsSilencedBy(entry *Silenced) bool {
+	if !e.HasCheck() {
+		return false
+	}
+
+	// Make sure the silence has started
+	now := time.Now().Unix()
+	if !entry.StartSilence(now) {
+		return false
+	}
+
+	// Is this event silenced for all subscriptions? (e.g. *:check_cpu)
+	if entry.Name == fmt.Sprintf("*:%s", e.Check.Name) {
+		return true
+	}
+
+	// Is this event silenced by the entity subscription? (e.g. entity:id:*)
+	if entry.Name == fmt.Sprintf("%s:*", GetEntitySubscription(e.Entity.Name)) {
+		return true
+	}
+
+	// Is this event silenced for this particular entity? (e.g.
+	// entity:id:check_cpu)
+	if entry.Name == fmt.Sprintf("%s:%s", GetEntitySubscription(e.Entity.Name), e.Check.Name) {
+		return true
+	}
+
+	for _, subscription := range e.Check.Subscriptions {
+		// Make sure the entity is subscribed to this specific subscription
+		if !stringsutil.InArray(subscription, e.Entity.Subscriptions) {
+			continue
+		}
+
+		// Is this event silenced by one of the check subscription? (e.g.
+		// load-balancer:*)
+		if entry.Name == fmt.Sprintf("%s:*", subscription) {
+			return true
+		}
+
+		// Is this event silenced by one of the check subscription for this
+		// particular check? (e.g. load-balancer:check_cpu)
+		if entry.Name == fmt.Sprintf("%s:%s", subscription, e.Check.Name) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// EventFields returns a set of fields that represent that resource
+func EventFields(r Resource) map[string]string {
+	resource := r.(*Event)
+	return map[string]string{
+		"event.name":                 resource.ObjectMeta.Name,
+		"event.namespace":            resource.ObjectMeta.Namespace,
+		"event.check.handlers":       strings.Join(resource.Check.Handlers, ","),
+		"event.check.publish":        strconv.FormatBool(resource.Check.Publish),
+		"event.check.round_robin":    strconv.FormatBool(resource.Check.RoundRobin),
+		"event.check.runtime_assets": strings.Join(resource.Check.RuntimeAssets, ","),
+		"event.check.status":         strconv.Itoa(int(resource.Check.Status)),
+		"event.check.subscriptions":  strings.Join(resource.Check.Subscriptions, ","),
+		"event.entity.deregister":    strconv.FormatBool(resource.Entity.Deregister),
+		"event.entity.entity_class":  resource.Entity.EntityClass,
+		"event.entity.subscriptions": strings.Join(resource.Entity.Subscriptions, ","),
+	}
 }

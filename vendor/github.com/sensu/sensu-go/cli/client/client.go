@@ -4,11 +4,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-resty/resty"
 	"github.com/sensu/sensu-go/cli/client/config"
-	"github.com/sensu/sensu-go/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,6 +37,9 @@ func init() {
 func New(config config.Config) *RestClient {
 	restyInst := resty.New()
 	client := &RestClient{resty: restyInst, config: config}
+
+	// set http client timeout
+	restyInst.SetTimeout(15 * time.Second)
 
 	// Standardize redirect policy
 	restyInst.SetRedirectPolicy(resty.FlexibleRedirectPolicy(10))
@@ -101,23 +104,6 @@ func New(config config.Config) *RestClient {
 		return nil
 	})
 
-	// Verify the Sensu edition and update the sensuctl configuration if required
-	restyInst.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
-		// Retrieve the Sensu edition from the response header
-		headerEdition := resp.Header().Get(types.EditionHeader)
-		if headerEdition == "" {
-			return nil
-		}
-
-		// Verify if the edition from the header differs from the configured one
-		if headerEdition != config.Edition() {
-			// Update the configured edition in sensuctl
-			return config.SaveEdition(headerEdition)
-		}
-
-		return nil
-	})
-
 	// logging
 	w := logger.Writer()
 	defer func() {
@@ -146,7 +132,7 @@ func (client *RestClient) Reset() {
 	client.configured = false
 }
 
-// ClearAuthToken clears the authoization token from the client config
+// ClearAuthToken clears the authorization token from the client config
 func (client *RestClient) ClearAuthToken() {
 	client.configure()
 	client.resty.SetAuthToken("")
@@ -169,4 +155,24 @@ func (client *RestClient) configure() {
 	}
 
 	client.configured = true
+}
+
+// ApplyListOptions mutates the given request to make it carry the semantics of
+// the given options.
+func ApplyListOptions(request *resty.Request, options *ListOptions) {
+	if options.FieldSelector != "" {
+		request.SetQueryParam("fieldSelector", options.FieldSelector)
+	}
+
+	if options.LabelSelector != "" {
+		request.SetQueryParam("labelSelector", options.LabelSelector)
+	}
+
+	if options.ChunkSize > 0 {
+		request.SetQueryParam("limit", strconv.Itoa(options.ChunkSize))
+	}
+
+	if options.ContinueToken != "" {
+		request.SetQueryParam("continue", options.ContinueToken)
+	}
 }

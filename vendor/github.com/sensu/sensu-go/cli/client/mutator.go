@@ -2,29 +2,22 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
 var mutatorsPath = createNSBasePath(coreAPIGroup, coreAPIVersion, "mutators")
 
 // ListMutators fetches all mutators from the configured Sensu instance
-func (client *RestClient) ListMutators(namespace string) ([]types.Mutator, error) {
-	var mutators []types.Mutator
+func (client *RestClient) ListMutators(namespace string, options *ListOptions) ([]corev2.Mutator, error) {
+	var mutators []corev2.Mutator
 
-	path := mutatorsPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(mutatorsPath(namespace), &mutators, options); err != nil {
 		return mutators, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return mutators, fmt.Errorf("%v", res.String())
-	}
-
-	err = json.Unmarshal(res.Body(), &mutators)
-	return mutators, err
+	return mutators, nil
 }
 
 // CreateMutator creates new mutator on the configured Sensu instance
@@ -48,18 +41,8 @@ func (client *RestClient) CreateMutator(mutator *types.Mutator) (err error) {
 }
 
 // DeleteMutator deletes the given mutator from the configured Sensu instance
-func (client *RestClient) DeleteMutator(mutator *types.Mutator) (err error) {
-	path := mutatorsPath(client.config.Namespace(), mutator.Name)
-	res, err := client.R().Delete(path)
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode() >= 400 {
-		return fmt.Errorf("%v", res.String())
-	}
-
-	return nil
+func (client *RestClient) DeleteMutator(namespace, name string) (err error) {
+	return client.Delete(mutatorsPath(namespace, name))
 }
 
 // FetchMutator fetches a specific handler from the configured Sensu instance

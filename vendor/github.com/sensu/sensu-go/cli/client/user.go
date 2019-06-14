@@ -3,10 +3,11 @@ package client
 import (
 	"encoding/json"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
-var usersPath = createBasePath(coreAPIGroup, coreAPIVersion, "users")
+var usersPath = CreateBasePath(coreAPIGroup, coreAPIVersion, "users")
 
 // AddGroupToUser makes "username" a member of "group".
 func (client *RestClient) AddGroupToUser(username, group string) error {
@@ -73,21 +74,14 @@ func (client *RestClient) FetchUser(username string) (*types.User, error) {
 }
 
 // ListUsers fetches all users from configured Sensu instance
-func (client *RestClient) ListUsers() ([]types.User, error) {
-	var users []types.User
+func (client *RestClient) ListUsers(options *ListOptions) ([]corev2.User, error) {
+	var users []corev2.User
 
-	path := usersPath()
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(usersPath(), &users, options); err != nil {
 		return users, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return users, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &users)
-	return users, err
+	return users, nil
 }
 
 // ReinstateUser reinstates a disabled user on configured Sensu instance

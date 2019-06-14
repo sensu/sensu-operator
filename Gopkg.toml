@@ -44,23 +44,19 @@ required = [
 
 [[constraint]]
   name = "k8s.io/api"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.13.1"
 
 [[constraint]]
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.13.1"
   name = "k8s.io/apiextensions-apiserver"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.10.0"
+  version = "kubernetes-1.13.1"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.10.0"
-
-[[constraint]]
-  name = "github.com/json-iterator/go"
-  revision = "f7279a603edee96fe7764d3de9c6ff8cf9970994"
+  version = "kubernetes-1.13.1"
 
 [prune]
   go-tests = true
@@ -76,8 +72,8 @@ required = [
 
 [[constraint]]
   name = "github.com/sensu/sensu-go"
-  branch = "master"
+  version = "5.9.0"
 
 [[constraint]]
-  branch = "release-1.11"
+  branch = "release-1.13"
   name = "k8s.io/code-generator"

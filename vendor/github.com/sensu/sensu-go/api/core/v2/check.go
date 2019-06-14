@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -72,6 +74,8 @@ func NewCheck(c *CheckConfig) *Check {
 		OutputMetricFormat:   c.OutputMetricFormat,
 		OutputMetricHandlers: c.OutputMetricHandlers,
 		EnvVars:              c.EnvVars,
+		DiscardOutput:        c.DiscardOutput,
+		MaxOutputSize:        c.MaxOutputSize,
 	}
 	if check.Labels == nil {
 		check.Labels = make(map[string]string)
@@ -82,8 +86,16 @@ func NewCheck(c *CheckConfig) *Check {
 	return check
 }
 
+const undocumentedTestCheckName = "!sensu_test_check!"
+
 // Validate returns an error if the check does not pass validation tests.
 func (c *Check) Validate() error {
+	if c.Name == undocumentedTestCheckName {
+		// undocumented test check, the agent will use this name to return
+		// a canned response. It is not possible to use this name according
+		// to the normal validation rules, so it shouldn't impact anyone.
+		return nil
+	}
 	if err := ValidateName(c.Name); err != nil {
 		return errors.New("check name " + err.Error())
 	}
@@ -103,6 +115,9 @@ func (c *Check) Validate() error {
 
 	if c.Ttl > 0 && c.Ttl <= int64(c.Interval) {
 		return errors.New("ttl must be greater than check interval")
+	}
+	if c.Ttl > 0 && c.Ttl < 5 {
+		return errors.New("minimum ttl is 5 seconds")
 	}
 
 	for _, assetName := range c.RuntimeAssets {
@@ -137,6 +152,10 @@ func (c *Check) Validate() error {
 
 	if err := ValidateEnvVars(c.EnvVars); err != nil {
 		return err
+	}
+
+	if c.MaxOutputSize < 0 {
+		return fmt.Errorf("MaxOutputSize must be >= 0")
 	}
 
 	return c.Subdue.Validate()
@@ -187,6 +206,12 @@ func (c *CheckConfig) MarshalJSON() ([]byte, error) {
 
 // Validate returns an error if the check does not pass validation tests.
 func (c *CheckConfig) Validate() error {
+	if c.Name == undocumentedTestCheckName {
+		// undocumented test check, the agent will use this name to return
+		// a canned response. It is not possible to use this name according
+		// to the normal validation rules, so it shouldn't impact anyone.
+		return nil
+	}
 	if err := ValidateName(c.Name); err != nil {
 		return errors.New("check name " + err.Error())
 	}
@@ -326,19 +351,15 @@ func FixtureCheckConfig(id string) *CheckConfig {
 	timeout := uint32(0)
 
 	check := &CheckConfig{
-		ObjectMeta:           NewObjectMeta(id, "default"),
-		Interval:             interval,
-		Subscriptions:        []string{"linux"},
-		Command:              "command",
-		Handlers:             []string{},
-		RuntimeAssets:        []string{"ruby-2-4-2"},
-		CheckHooks:           []HookList{*FixtureHookList("hook1")},
-		Publish:              true,
-		Cron:                 "",
-		Ttl:                  0,
-		Timeout:              timeout,
-		OutputMetricHandlers: []string{},
-		OutputMetricFormat:   "",
+		ObjectMeta:    NewObjectMeta(id, "default"),
+		Interval:      interval,
+		Subscriptions: []string{"linux"},
+		Command:       "command",
+		RuntimeAssets: []string{"ruby-2-4-2"},
+		CheckHooks:    []HookList{*FixtureHookList("hook1")},
+		Publish:       true,
+		Ttl:           0,
+		Timeout:       timeout,
 	}
 	return check
 }
@@ -442,4 +463,18 @@ func (c *CheckConfig) IsSubdued() bool {
 		return false
 	}
 	return subdued
+}
+
+// CheckConfigFields returns a set of fields that represent that resource
+func CheckConfigFields(r Resource) map[string]string {
+	resource := r.(*CheckConfig)
+	return map[string]string{
+		"check.name":           resource.ObjectMeta.Name,
+		"check.namespace":      resource.ObjectMeta.Namespace,
+		"check.handlers":       strings.Join(resource.Handlers, ","),
+		"check.publish":        strconv.FormatBool(resource.Publish),
+		"check.round_robin":    strconv.FormatBool(resource.RoundRobin),
+		"check.runtime_assets": strings.Join(resource.RuntimeAssets, ","),
+		"check.subscriptions":  strings.Join(resource.Subscriptions, ","),
+	}
 }

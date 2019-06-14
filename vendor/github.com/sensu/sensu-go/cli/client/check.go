@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
@@ -50,19 +51,8 @@ func (client *RestClient) UpdateCheck(check *types.CheckConfig) (err error) {
 }
 
 // DeleteCheck deletes check from configured Sensu instance
-func (client *RestClient) DeleteCheck(check *types.CheckConfig) error {
-	path := checksPath(client.config.Namespace(), check.Name)
-	res, err := client.R().Delete(path)
-
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode() >= 400 {
-		return UnmarshalError(res)
-	}
-
-	return nil
+func (client *RestClient) DeleteCheck(namespace, name string) error {
+	return client.Delete(checksPath(namespace, name))
 }
 
 // ExecuteCheck sends an execution request with the provided adhoc request
@@ -105,21 +95,14 @@ func (client *RestClient) FetchCheck(name string) (*types.CheckConfig, error) {
 }
 
 // ListChecks fetches all checks from configured Sensu instance
-func (client *RestClient) ListChecks(namespace string) ([]types.CheckConfig, error) {
-	var checks []types.CheckConfig
+func (client *RestClient) ListChecks(namespace string, options *ListOptions) ([]corev2.CheckConfig, error) {
+	var checks []corev2.CheckConfig
 
-	path := checksPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(checksPath(namespace), &checks, options); err != nil {
 		return checks, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return checks, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &checks)
-	return checks, err
+	return checks, nil
 }
 
 // AddCheckHook associates an existing hook with an existing check

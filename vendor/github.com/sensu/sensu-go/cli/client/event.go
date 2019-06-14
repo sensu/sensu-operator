@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
@@ -28,34 +29,19 @@ func (client *RestClient) FetchEvent(entity, check string) (*types.Event, error)
 }
 
 // ListEvents fetches events from Sensu API
-func (client *RestClient) ListEvents(namespace string) ([]types.Event, error) {
-	var events []types.Event
+func (client *RestClient) ListEvents(namespace string, options *ListOptions) ([]corev2.Event, error) {
+	var events []corev2.Event
 
-	path := eventsPath(namespace)
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(eventsPath(namespace), &events, options); err != nil {
 		return events, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return nil, UnmarshalError(res)
-	}
-
-	err = json.Unmarshal(res.Body(), &events)
-	return events, err
+	return events, nil
 }
 
 // DeleteEvent deletes an event.
-func (client *RestClient) DeleteEvent(entity, check string) error {
-	path := eventsPath(client.config.Namespace(), entity, check)
-	res, err := client.R().Delete(path)
-	if err != nil {
-		return err
-	}
-	if res.StatusCode() >= 400 {
-		return UnmarshalError(res)
-	}
-	return nil
+func (client *RestClient) DeleteEvent(namespace, entity, check string) error {
+	return client.Delete(eventsPath(namespace, entity, check))
 }
 
 // UpdateEvent updates an event.

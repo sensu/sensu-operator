@@ -8,7 +8,8 @@ import (
 const coreAPIGroup = "core"
 const coreAPIVersion = "v2"
 
-func createBasePath(group, version string, resType ...string) func(...string) string {
+// CreateBasePath ...
+func CreateBasePath(group, version string, resType ...string) func(...string) string {
 	fn := createNSBasePath(group, version, resType...)
 
 	return func(components ...string) string {
@@ -17,7 +18,7 @@ func createBasePath(group, version string, resType ...string) func(...string) st
 	}
 }
 
-// Returns an anonymous function that when given a namesampe and additional path
+// Returns an anonymous function that when given a namespace and additional path
 // components returns a full path to a endpoint. If namespace is an empty string
 // namespaces prefix is omitted from the resulting path.
 //

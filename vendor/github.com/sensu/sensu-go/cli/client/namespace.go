@@ -2,12 +2,12 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
-var namespacesPath = createBasePath(coreAPIGroup, coreAPIVersion, "namespaces")
+var namespacesPath = CreateBasePath(coreAPIGroup, coreAPIVersion, "namespaces")
 
 // CreateNamespace creates new namespace on configured Sensu instance
 func (client *RestClient) CreateNamespace(namespace *types.Namespace) error {
@@ -24,7 +24,7 @@ func (client *RestClient) CreateNamespace(namespace *types.Namespace) error {
 	}
 
 	if res.StatusCode() >= 400 {
-		return fmt.Errorf("%v", res.String())
+		return UnmarshalError(res)
 	}
 
 	return nil
@@ -44,7 +44,7 @@ func (client *RestClient) UpdateNamespace(namespace *types.Namespace) error {
 	}
 
 	if res.StatusCode() >= 400 {
-		return fmt.Errorf("%v", res.String())
+		return UnmarshalError(res)
 	}
 
 	return nil
@@ -52,36 +52,18 @@ func (client *RestClient) UpdateNamespace(namespace *types.Namespace) error {
 
 // DeleteNamespace deletes an namespace on configured Sensu instance
 func (client *RestClient) DeleteNamespace(namespace string) error {
-	path := namespacesPath(namespace)
-	res, err := client.R().Delete(path)
-
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode() >= 400 {
-		return fmt.Errorf("%v", res.String())
-	}
-
-	return nil
+	return client.Delete(namespacesPath(namespace))
 }
 
 // ListNamespaces fetches all namespaces from configured Sensu instance
-func (client *RestClient) ListNamespaces() ([]types.Namespace, error) {
-	var namespaces []types.Namespace
+func (client *RestClient) ListNamespaces(options *ListOptions) ([]corev2.Namespace, error) {
+	var namespaces []corev2.Namespace
 
-	path := namespacesPath()
-	res, err := client.R().Get(path)
-	if err != nil {
+	if err := client.List(namespacesPath(), &namespaces, options); err != nil {
 		return namespaces, err
 	}
 
-	if res.StatusCode() >= 400 {
-		return namespaces, fmt.Errorf("%v", res.String())
-	}
-
-	err = json.Unmarshal(res.Body(), &namespaces)
-	return namespaces, err
+	return namespaces, nil
 }
 
 // FetchNamespace fetches an namespace by name

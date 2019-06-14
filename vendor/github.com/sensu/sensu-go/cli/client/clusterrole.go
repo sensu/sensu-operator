@@ -1,35 +1,36 @@
 package client
 
 import (
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-go/types"
 )
 
-var clusterRolesPath = createBasePath(coreAPIGroup, coreAPIVersion, "clusterroles")
+var clusterRolesPath = CreateBasePath(coreAPIGroup, coreAPIVersion, "clusterroles")
 
 // CreateClusterRole with the given cluster role
 func (client *RestClient) CreateClusterRole(clusterRole *types.ClusterRole) error {
-	return client.post(clusterRolesPath(), clusterRole)
+	return client.Post(clusterRolesPath(), clusterRole)
 }
 
 // DeleteClusterRole with the given name
 func (client *RestClient) DeleteClusterRole(name string) error {
-	return client.delete(clusterRolesPath(name))
+	return client.Delete(clusterRolesPath(name))
 }
 
 // FetchClusterRole with the given name
 func (client *RestClient) FetchClusterRole(name string) (*types.ClusterRole, error) {
 	clusterRole := &types.ClusterRole{}
-	if err := client.get(clusterRolesPath(name), clusterRole); err != nil {
+	if err := client.Get(clusterRolesPath(name), clusterRole); err != nil {
 		return nil, err
 	}
 	return clusterRole, nil
 }
 
 // ListClusterRoles within the namespace
-func (client *RestClient) ListClusterRoles() ([]types.ClusterRole, error) {
-	clusterRoles := []types.ClusterRole{}
+func (client *RestClient) ListClusterRoles(options *ListOptions) ([]corev2.ClusterRole, error) {
+	clusterRoles := []corev2.ClusterRole{}
 
-	if err := client.list(clusterRolesPath(), &clusterRoles); err != nil {
+	if err := client.List(clusterRolesPath(), &clusterRoles, options); err != nil {
 		return clusterRoles, err
 	}
 
