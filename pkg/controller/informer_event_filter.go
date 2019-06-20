@@ -30,7 +30,7 @@ func (c *Controller) onDeleteSensuEventFilter(obj interface{}) {
 	}
 
 	if c.clusterExists(filter.Spec.SensuMetadata.ClusterName) {
-		sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
+		sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, c.Config.Namespace, filter.Spec.SensuMetadata.Namespace)
 		err := sensuClient.DeleteEventFilter(filter)
 		if err != nil {
 			c.logger.Warningf("failed to handle event filter delete event: %v", err)
@@ -72,7 +72,7 @@ func (c *Controller) syncSensuEventFilter(filter *api.SensuEventFilter) {
 		}
 		return
 	}
-	sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(filter.Spec.SensuMetadata.ClusterName, c.Config.Namespace, filter.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateEventFilter(filter)
 	c.logger.Debugf("in syncSensuEventFilter, after update filter within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		filter.Spec.SensuMetadata.ClusterName, filter.GetNamespace(), filter.Spec.SensuMetadata.Namespace)
