@@ -30,7 +30,7 @@ func (c *Controller) onDeleteSensuAsset(obj interface{}) {
 		}
 	}
 	if c.clusterExists(asset.Spec.SensuMetadata.ClusterName) {
-		sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+		sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, c.Config.Namespace, asset.Spec.SensuMetadata.Namespace)
 		err := sensuClient.DeleteAsset(asset)
 		if err != nil {
 			c.logger.Warningf("failed to handle asset delete event: %v", err)
@@ -75,7 +75,7 @@ func (c *Controller) syncSensuAsset(asset *api.SensuAsset) {
 	}
 	c.logger.Debugf("in syncSensuAsset, about to update asset within sensu cluster, using sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
-	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, asset.GetNamespace(), asset.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(asset.Spec.SensuMetadata.ClusterName, c.Config.Namespace, asset.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateAsset(asset)
 	c.logger.Debugf("in syncSensuAsset, after update asset in sensu cluster")
 	if err != nil {

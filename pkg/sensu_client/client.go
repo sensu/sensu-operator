@@ -45,10 +45,10 @@ func New(clusterName, namespace string, sensuNamespace string) *SensuClient {
 	sClient := &SensuClient{
 		logger:      logrus.WithField("pkg", "sensu_client").WithField("cluster-name", clusterName),
 		clusterName: clusterName,
-		namespace:   sensuNamespace,
+		namespace:   namespace,
 		timeout:     time.Duration(defaultTimeout),
 	}
-	sClient.logger.Debugf("Created new sensuClient with clusterName: %s, namespace %s", clusterName, sensuNamespace)
+	sClient.logger.Debugf("Created new sensuClient with clusterName: %s, namespace %s", clusterName, namespace)
 	sClient.logger.Debugf("makeFullyQualifiedSensuClientURL returns: %s", sClient.makeFullyQualifiedSensuClientURL())
 	conf := basic.Config{
 		Cluster: basic.Cluster{

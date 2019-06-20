@@ -30,7 +30,7 @@ func (c *Controller) onDeleteSensuHandler(obj interface{}) {
 	}
 
 	if c.clusterExists(handler.Spec.SensuMetadata.ClusterName) {
-		sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+		sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, c.Config.Namespace, handler.Spec.SensuMetadata.Namespace)
 		err := sensuClient.DeleteHandler(handler)
 		if err != nil {
 			c.logger.Warningf("failed to handle handler delete event: %v", err)
@@ -72,7 +72,7 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 		}
 		return
 	}
-	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(handler.Spec.SensuMetadata.ClusterName, c.Config.Namespace, handler.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateHandler(handler)
 	c.logger.Debugf("in syncSensuHandler, after update handler within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		handler.Spec.SensuMetadata.ClusterName, handler.GetNamespace(), handler.Spec.SensuMetadata.Namespace)

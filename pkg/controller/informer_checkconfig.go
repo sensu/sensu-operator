@@ -31,7 +31,7 @@ func (c *Controller) onDeleteSensuCheckConfig(obj interface{}) {
 	}
 
 	if c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
-		sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
+		sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, c.Config.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
 		err := sensuClient.DeleteCheckConfig(checkConfig)
 		if err != nil {
 			c.logger.Warningf("failed to handle checkconfig delete event: %v", err)
@@ -75,7 +75,7 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 		}
 		return
 	}
-	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.ObjectMeta.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
+	sensuClient := sensu_client.New(checkConfig.Spec.SensuMetadata.ClusterName, c.Config.Namespace, checkConfig.Spec.SensuMetadata.Namespace)
 	err = sensuClient.UpdateCheckConfig(checkConfig)
 	c.logger.Debugf("in syncSensuCheckConfig, after update checkconfig within sensu cluster '%s', within k8s namespace '%s', and sensu namespace '%s'",
 		checkConfig.Spec.SensuMetadata.ClusterName, checkConfig.GetNamespace(), checkConfig.Spec.SensuMetadata.Namespace)
