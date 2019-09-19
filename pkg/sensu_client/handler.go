@@ -35,7 +35,7 @@ func (s *SensuClient) DeleteHandler(handler *v1beta1.SensuHandler) error {
 
 	go func() {
 		var err error
-		if err = s.sensuCli.Client.DeleteHandler(handler.Namespace, handler.Name); err != nil {
+		if err = s.sensuCli.Client.DeleteHandler(handler.Spec.SensuMetadata.Namespace, handler.Spec.SensuMetadata.Name); err != nil {
 			s.logger.Errorf("failed to delete handler: %+v", err)
 		}
 		c1 <- err

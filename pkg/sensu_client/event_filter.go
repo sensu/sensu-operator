@@ -35,7 +35,7 @@ func (s *SensuClient) DeleteEventFilter(filter *v1beta1.SensuEventFilter) error 
 
 	go func() {
 		var err error
-		if err = s.sensuCli.Client.DeleteFilter(filter.Namespace, filter.Name); err != nil {
+		if err = s.sensuCli.Client.DeleteFilter(filter.Spec.SensuMetadata.Namespace, filter.Spec.SensuMetadata.Name); err != nil {
 			s.logger.Errorf("failed to delete filter: %+v", err)
 		}
 		c1 <- err

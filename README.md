@@ -8,34 +8,19 @@ The Sensu operator manages Sensu 2.0 clusters deployed to [Kubernetes][k8s-home]
 
 It is based on and heavily inspired by the [etcd-operator](https://github.com/coreos/etcd-operator).
 
-## Setup
+## Setup instructions for ObjectRocket contributors
 
-Start Minikube with CNI plugins enabled and install Calico for network policies to take effect:
-
-```bash
-minikube start --memory=3072 --kubernetes-version v1.10.0 --extra-config=controller-manager.cluster-cidr=192.168.0.0/16 --extra-config=controller-manager.allocate-node-cidrs=true --network-plugin=cni --extra-config=kubelet.network-plugin=cni
-kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-```
-
-Network policies will get installed automatically with a Sensu cluster.
-
-For testing, a NetworkPolicy capable CNI plugin is not necessary, the operator will install the policy regardless without effect.
+Start minikube:
 
 ```bash
-minikube start --memory=3072 --kubernetes-version v1.10.0
+minikube start --memory=3072 --kubernetes-version v1.13.1
 ```
+
+Note: the operator has a NetworkPolicy capable CNI plugin, but not needed around here.
 
 ### Prerequisites
 
-Build the binaries:
-
-```bash
-make build
-```
-
-Since there is no official, public `sensu-operator` container image
-yet, i.e. you have to build your own:
+Build the binaries into a local image in minikube
 
 ```bash
 #### Make sure the container image is build with the Minikube Docker
@@ -43,7 +28,15 @@ yet, i.e. you have to build your own:
 eval $(minikube docker-env)
 
 #### Build the container:
-make container
+make docker-build
+```
+
+Before proceding to the next steps make sure the image build is completed and shows:
+
+```bash
+docker image ls
+REPOSITORY                                TAG                 IMAGE ID            CREATED             SIZE
+objectrocket/sensu-operator               latest              6cc444763341        2 hours ago         60.2MB
 ```
 
 ### Installation
@@ -51,7 +44,7 @@ make container
 Create a role and role binding:
 
 ```bash
-./example/rbac/create-role
+./example/rbac/create-role --namespace=sensu
 ```
 
 Create a `sensu-operator` deployment:
@@ -60,30 +53,40 @@ Create a `sensu-operator` deployment:
 kubectl apply -f example/deployment.yaml
 ```
 
-You should end up with three running pods, e.g.:
+You should end up with 1 running pods, e.g.:
 
 ```bash
 $ kubectl get pods -l name=sensu-operator
 NAME                              READY     STATUS    RESTARTS   AGE
 sensu-operator-6444f68845-54bvs   1/1       Running   0          1m
-sensu-operator-6444f68845-p74zn   1/1       Running   0          1m
-sensu-operator-6444f68845-vpkxj   1/1       Running   0          1m
 ```
 
 ## Usage example
 
-Create your first `SensuCluster`:
+Create your first `SensuCluster` in the `sensu` namespace:
 
 ```bash
-kubectl apply -f example/example-sensu-cluster.yaml
+kubectl apply -f example/example-sensu-cluster-objectrocket.yaml
 ```
 
 From within the cluster, the Sensu cluster agent should now be reachable
 via:
 
 ```bash
-ws://example-sensu-cluster-agent.default.svc.cluster.local:8081
+ws://example-sensu-cluster-agent.sensu.svc.cluster.local:8081
 ```
+
+If needed, login into the sensu backend UI:
+
+```bash
+kubectl -n sensu port-forward pod/platdev0-0 3000:3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+```
+
+Open your browser at port 3000
+User: `admin`
+PW: `P@ssw0rd!`
 
 To reach the Sensu cluster's services via `NodePort` do:
 
@@ -96,16 +99,11 @@ Date: Thu, 21 Jun 2018 14:44:47 GMT
 Content-Length: 0
 ```
 
-Let's deploy a dummy agent:
+Finally create a sensu asset and check with the following command:
 
 ```bash
-kubectl apply -f example/dummy-agent-deployment.yaml
+kubectl apply -f example/example-sensu-check-objectrocket.yaml
 ```
-
-The Sensu dashboard (via `http://192.168.99.100:31900/default/default/entities`)
-should now show you two entities. `192.168.99.100` is the IP of the
-Minikube instance and could be different on your system, see
-`minikube ip`.
 
 ## Backup & restore
 
