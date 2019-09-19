@@ -8,7 +8,6 @@ The Sensu operator manages Sensu 2.0 clusters deployed to [Kubernetes][k8s-home]
 
 It is based on and heavily inspired by the [etcd-operator](https://github.com/coreos/etcd-operator).
 
-
 ## Setup instructions for ObjectRocket contributors
 
 Start minikube:
@@ -16,12 +15,12 @@ Start minikube:
 ```bash
 minikube start --memory=3072 --kubernetes-version v1.13.1
 ```
+
 Note: the operator has a NetworkPolicy capable CNI plugin, but not needed around here.
 
 ### Prerequisites
 
 Build the binaries into a local image in minikube
-
 
 ```bash
 #### Make sure the container image is build with the Minikube Docker
@@ -33,7 +32,8 @@ make docker-build
 ```
 
 Before proceding to the next steps make sure the image build is completed and shows:
-```
+
+```bash
 docker image ls
 REPOSITORY                                TAG                 IMAGE ID            CREATED             SIZE
 objectrocket/sensu-operator               latest              6cc444763341        2 hours ago         60.2MB
@@ -77,12 +77,14 @@ ws://example-sensu-cluster-agent.sensu.svc.cluster.local:8081
 ```
 
 If needed, login into the sensu backend UI:
-```
+
+```bash
 kubectl -n sensu port-forward pod/platdev0-0 3000:3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 ```
-Open your browser at http://127.0.0.1:3000
+
+Open your browser at port 3000
 User: `admin`
 PW: `P@ssw0rd!`
 
@@ -97,14 +99,11 @@ Date: Thu, 21 Jun 2018 14:44:47 GMT
 Content-Length: 0
 ```
 
-
-
 Finally create a sensu asset and check with the following command:
 
 ```bash
 kubectl apply -f example/example-sensu-check-objectrocket.yaml
 ```
-
 
 ## Backup & restore
 
