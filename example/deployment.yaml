@@ -1,9 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sensu
+
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: sensu-operator
+  namespace: sensu
 spec:
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
@@ -11,11 +19,8 @@ spec:
     spec:
       containers:
       - name: sensu-operator
-        image: objectrocket/sensu-operator:v0.0.1
-        command:
-        - sensu-operator
-        # Uncomment to act for resources in all namespaces. More information in doc/clusterwide.md
-        #- -cluster-wide
+        image: objectrocket/sensu-operator:latest
+        imagePullPolicy: Never
         env:
         - name: MY_POD_NAMESPACE
           valueFrom:
@@ -25,3 +30,15 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: SENSUOP_LOG_LEVEL
+          value: debug
+        - name: SENSUOP_CLUSTER_WIDE
+          value: "true"
+        - name: SENSUOP_RESYNC_INTERVAL
+          value: 5m
+        - name: SENSUOP_GC_INTERVAL
+          value: 10m
+        - name: SENSUOP_WORKER_THREADS
+          value: "4"
+        - name: SENSUOP_PROCESSING_RETRIES
+          value: "5"

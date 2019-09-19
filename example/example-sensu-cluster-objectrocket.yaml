@@ -1,25 +1,20 @@
 apiVersion: objectrocket.com/v1beta1
 kind: SensuCluster
 metadata:
+  annotations:
+    objectrocket.com/scope: clusterwide
   name: platdev0
   namespace: sensu
 spec:
   pod:
-    nodeSelector:
-      node-role.kubernetes.io/platform_worker: "true"
     resources: {}
-    tolerations:
-    - effect: NoSchedule
-      key: node_role
-      operator: Equal
-      value: platform_worker
     persistentVolumeClaimSpec:
       accessModes:
       - ReadWriteOnce
       resources:
         requests:
           storage: 8Gi
-      storageClassName: general
+      storageClassName: standard
   repository: sensu/sensu
-  size: 3
-  version: 5.1.0
+  size: 1
+  version: 5.13.1

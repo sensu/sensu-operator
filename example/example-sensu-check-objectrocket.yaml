@@ -1,0 +1,48 @@
+---
+apiVersion: objectrocket.com/v1beta1
+kind: SensuAsset
+metadata:
+  annotations:
+    objectrocket.com/scope: clusterwide
+  finalizers:
+  - asset.finalizer.objectrocket.com
+  name: sensu-config-asset-memory
+  namespace: sensu
+spec:
+  sensuMetadata:
+    clusterName: platdev0
+    name: sensu-config-asset-memory
+    namespace: platform
+  sha512: ef2874c6376cc71aa35c8392d647c131f9bd10fcf60998e4435525036df384b187a99888319f80299d0d83d2e747b3c0fa946e21a39097871c7eea593be1b554
+  url: https://s3.us-east-2.amazonaws.com/objectrocket-product-versions/sensu/assets/check-mem.tar.gz
+
+---
+apiVersion: objectrocket.com/v1beta1
+kind: SensuCheckConfig
+metadata:
+  annotations:
+    objectrocket.com/scope: clusterwide
+  finalizers:
+  - checkconfig.finalizer.objectrocket.com
+  name: sensu-config-check-memory
+  namespace: sensu
+spec:
+  command: check-mem -w 98 -c 99
+  envVars:
+  - CLUSTER=platdev0
+  - ENVIRONMENT=scratchpad
+  handlers:
+  - sensu-config-handler-slack
+  interval: 15
+  publish: true
+  runtimeAssets:
+  - sensu-config-asset-memory
+  sensuMetadata:
+    annotations:
+      fatigue_check/interval: "3600"
+      fatigue_check/occurrences: "20"
+    clusterName: platdev0
+    name: sensu-config-check-memory
+    namespace: platform
+  subscriptions:
+  - common
