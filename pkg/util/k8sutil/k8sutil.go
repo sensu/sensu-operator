@@ -26,7 +26,7 @@ import (
 	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/retryutil"
 
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -228,16 +228,16 @@ func CreateAndWaitPod(kubecli kubernetes.Interface, ns string, pod *v1.Pod, time
 
 // CreateAndWaitDeployment creates a deployment and waits until the defined
 // number of replicas is reached
-func CreateAndWaitDeployment(kubecli kubernetes.Interface, ns string, deployment *appsv1beta1.Deployment, timeout time.Duration) (*appsv1beta1.Deployment, error) {
-	deployment, err := kubecli.AppsV1beta1().Deployments(ns).Create(deployment)
+func CreateAndWaitDeployment(kubecli kubernetes.Interface, ns string, deployment *appsv1.Deployment, timeout time.Duration) (*appsv1.Deployment, error) {
+	deployment, err := kubecli.AppsV1().Deployments(ns).Create(deployment)
 	if err != nil {
 		return nil, err
 	}
 
 	interval := 5 * time.Second
-	var retDeployment *appsv1beta1.Deployment
+	var retDeployment *appsv1.Deployment
 	err = retryutil.Retry(interval, int(timeout/(interval)), func() (bool, error) {
-		retDeployment, err = kubecli.AppsV1beta1().Deployments(ns).Get(deployment.Name, metav1.GetOptions{})
+		retDeployment, err = kubecli.AppsV1().Deployments(ns).Get(deployment.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -438,7 +438,7 @@ func CreateNetPolicy(kubecli kubernetes.Interface, clusterName, namespace string
 func NewSensuPodPVC(m *etcdutil.MemberConfig, pvcSpec v1.PersistentVolumeClaimSpec, clusterName, namespace string, owner metav1.OwnerReference) *v1.PersistentVolumeClaim {
 	pvc := &v1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      clusterName,
+			Name:      "etcd-data",
 			Namespace: namespace,
 			Labels:    LabelsForCluster(clusterName),
 		},
@@ -456,6 +456,7 @@ etcd-name: "$HOSTNAME"
 etcd-initial-advertise-peer-urls: "http://${LOCAL_HOSTNAME}:2380"
 etcd-listen-peer-urls: "%s"
 etcd-listen-client-urls: "%s"
+etcd-advertise-client-urls: "http://${LOCAL_HOSTNAME}:2379"
 etcd-initial-cluster: "${INITIAL_CLUSTER}"
 etcd-initial-cluster-state: "${STATE}"
 `, stateDir, m.ListenPeerURL(), m.ListenClientURL())
@@ -572,18 +573,24 @@ etcd-key-file: %[1]s/server.key
 					Image: imageNameBusybox(cs.Pod),
 					Name:  "make-sensu-config",
 					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`HOSTNAME=$(hostname)
+ORDINAL=${HOSTNAME##*-}
 TOKEN=%s
 SUBDOMAIN=%s
 NAMESPACE=%s
 LOCAL_HOSTNAME=${HOSTNAME}.${SUBDOMAIN}.${NAMESPACE}.svc
 SEED_NAME=${SUBDOMAIN}-0
 SEED_HOSTNAME=${SEED_NAME}.${SUBDOMAIN}.${NAMESPACE}.svc
-INITIAL_CLUSTER="${HOSTNAME}=http://${LOCAL_HOSTNAME}:2380"
+INITIAL_CLUSTER="${SEED_NAME}=http://${SEED_HOSTNAME}:2380"
 STATE="new"
-if [[ $(expr match "${HOSTNAME}" ".*-0") -eq 0 ]]
+if [[ "$ORDINAL" == "0" ]]
 then
-    STATE="existing"
-	INITIAL_CLUSTER="${SEED_NAME}=${INITIAL_CLUSTER},http://${SEED_HOSTNAME}:2380"
+	STATE="new"
+else
+	STATE="existing"
+	for i in $(seq 1 $ORDINAL)
+	do
+		INITIAL_CLUSTER=${INITIAL_CLUSTER},${SUBDOMAIN}-${i}=http://${SUBDOMAIN}-${i}.${SUBDOMAIN}.${NAMESPACE}.svc:2380
+	done
 fi
 if [[ "${STATE}" == "new" ]]
 then
@@ -621,20 +628,21 @@ func podSecurityContext(podPolicy *api.PodPolicy) *v1.PodSecurityContext {
 }
 
 // NewSensuStatefulSet creates a new StatefulSet for a Sensu cluster
-func NewSensuStatefulSet(m *etcdutil.MemberConfig, clusterName, token string, cs api.ClusterSpec, owner metav1.OwnerReference) *appsv1beta1.StatefulSet {
+func NewSensuStatefulSet(m *etcdutil.MemberConfig, clusterName, token string, cs api.ClusterSpec, owner metav1.OwnerReference) *appsv1.StatefulSet {
 	podTemplate := newSensuPodTemplate(m, clusterName, token, cs)
 	applyPodPolicy(clusterName, podTemplate, cs.Pod)
 	addOwnerRefToObject(podTemplate.GetObjectMeta(), owner)
-	statefulSet := &appsv1beta1.StatefulSet{
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: clusterName,
 		},
-		Spec: appsv1beta1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podTemplate.ObjectMeta.Labels,
 			},
 			Template:    *podTemplate,
 			ServiceName: clusterName,
+			Replicas:    newInt32(1),
 		},
 	}
 	return statefulSet
@@ -725,4 +733,9 @@ func UniqueMemberName(clusterName string) string {
 		clusterName = clusterName[:maxNameLength]
 	}
 	return clusterName + "-" + suffix
+}
+
+func newInt32(i int) *int32 {
+	var newI int32 = int32(i)
+	return &newI
 }

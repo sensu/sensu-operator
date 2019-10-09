@@ -15,9 +15,14 @@
 package cluster
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/coreos/etcd/clientv3"
+	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
+	"github.com/objectrocket/sensu-operator/pkg/util/constants"
+	"github.com/objectrocket/sensu-operator/pkg/util/etcdutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +37,7 @@ var ErrLostQuorum = errors.New("lost quorum")
 func (c *Cluster) reconcile(pods []*v1.Pod) error {
 	if c.statefulSet.Spec.Replicas == nil {
 		c.logger.Infof("StatefulSet for cluster %s has nil Replicas.  Fetching new StatefulSet", c.name())
-		set, err := c.config.KubeCli.AppsV1beta1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
+		set, err := c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("Failed to fetch new StatefulSet: %v", err)
 		}
@@ -41,26 +46,49 @@ func (c *Cluster) reconcile(pods []*v1.Pod) error {
 		return nil
 	}
 	if c.cluster.Spec.Size != int(*c.statefulSet.Spec.Replicas) {
-		set, err := c.config.KubeCli.AppsV1beta1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
+		set, err := c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("Error getting StatefulSet %s for size update: %v", c.statefulSet.GetName(), err)
 		}
-		set, err = c.config.KubeCli.AppsV1beta1().StatefulSets(c.cluster.Namespace).Update(set)
+		var affectedMember int
+		if int(*set.Spec.Replicas) < c.cluster.Spec.Size {
+			*set.Spec.Replicas++
+			affectedMember = int(*set.Spec.Replicas - 1)
+			if err = c.addOneMember(affectedMember); err != nil {
+				return err
+			}
+		} else if int(*set.Spec.Replicas) > c.cluster.Spec.Size {
+			affectedMember = int(*set.Spec.Replicas - 1)
+			*set.Spec.Replicas--
+			if err = c.removeOneMember(affectedMember); err != nil {
+				return err
+			}
+		}
+		set, err = c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Update(set)
 		if err != nil {
 			return fmt.Errorf("Error updating StatefulSet %s size: %v", c.statefulSet.GetName(), err)
 		}
 		c.statefulSet = set
-		c.logger.Infof("Update StatefulSet %s size from %d to %d", c.statefulSet.GetName(), *c.statefulSet.Spec.Replicas, c.cluster.Spec.Size)
+		c.status.Size = int(*set.Spec.Replicas)
+
+		c.logger.Infof("Updated StatefulSet size to %d", *c.statefulSet.Spec.Replicas)
 		return nil
 	}
-	var oldPod *v1.Pod
-	oldPod = pickOneOldMember(pods, c.cluster.Spec.Version)
-	if oldPod != nil {
-		// This needs to be handled once the etcd cluster is either external or has multiple nodes
-		c.logger.Warnf("Pod %s needs upgraded from version %s to %s", oldPod.GetName(), k8sutil.GetSensuVersion(oldPod), c.cluster.Spec.Version)
-		return nil
+	c.status.ClearCondition(api.ClusterConditionScaling)
+
+	if needUpgrade(pods, c.cluster.Spec) {
+		c.status.UpgradeVersionTo(c.cluster.Spec.Version)
+		return c.upgradeStatefulSet()
 	}
+	c.status.ClearCondition(api.ClusterConditionUpgrading)
+
+	c.status.SetVersion(c.cluster.Spec.Version)
+	c.status.SetReadyCondition()
 	return nil
+}
+
+func needUpgrade(pods []*v1.Pod, cs api.ClusterSpec) bool {
+	return pickOneOldMember(pods, cs.Version) != nil
 }
 
 func pickOneOldMember(pods []*v1.Pod, newVersion string) *v1.Pod {
@@ -69,6 +97,88 @@ func pickOneOldMember(pods []*v1.Pod, newVersion string) *v1.Pod {
 			continue
 		}
 		return pod
+	}
+	return nil
+}
+
+func (c *Cluster) addOneMember(ordinalID int) error {
+	c.status.SetScalingUpCondition(ordinalID, ordinalID+1)
+	m := &etcdutil.MemberConfig{
+		Namespace:    c.cluster.Namespace,
+		SecurePeer:   c.isSecurePeer(),
+		SecureClient: c.isSecureClient(),
+	}
+
+	cfg := clientv3.Config{
+		Endpoints:   c.ClientURLs(m),
+		DialTimeout: constants.DefaultDialTimeout,
+		TLS:         c.tlsConfig,
+	}
+	etcdcli, err := clientv3.New(cfg)
+	if err != nil {
+		return fmt.Errorf("add one member failed: creating etcd client failed %v", err)
+	}
+	defer etcdcli.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultRequestTimeout)
+	resp, err := etcdcli.MemberAdd(ctx, []string{c.PeerURL(m, ordinalID)})
+	cancel()
+	if err != nil {
+		return fmt.Errorf("fail to add new member (%s): %v", c.memberName(ordinalID), err)
+	}
+	c.logger.Debugf("resp from memberadd was %+v", resp)
+
+	c.logger.Infof("added member (%s)", c.memberName(ordinalID))
+	return nil
+}
+
+func (c *Cluster) removeOneMember(ordinalID int) error {
+	var (
+		id uint64
+	)
+	c.status.SetScalingDownCondition(ordinalID+1, ordinalID)
+	m := &etcdutil.MemberConfig{
+		Namespace:    c.cluster.Namespace,
+		SecurePeer:   c.isSecurePeer(),
+		SecureClient: c.isSecureClient(),
+	}
+	mList, err := etcdutil.ListMembers(c.ClientURLs(m), c.tlsConfig)
+	if err != nil {
+		return err
+	}
+	memberName := fmt.Sprintf("%s-%d", c.name(), ordinalID)
+	for _, m := range mList.Members {
+		if m.Name == memberName {
+			id = m.ID
+		}
+	}
+	if id == 0 {
+		return fmt.Errorf("Could not find %s in etcd member list", memberName)
+	}
+
+	err = etcdutil.RemoveMember(c.ClientURLs(m), c.tlsConfig, id)
+	if err != nil {
+		return fmt.Errorf("fail to remove member (%s): %v", c.memberName(ordinalID), err)
+	}
+
+	if c.isPodPVEnabled() {
+		err = c.removePVC(c.pvcName(ordinalID))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Cluster) pvcName(ordinalID int) string {
+	return fmt.Sprintf("etcd-data-%s-%d", c.name(), ordinalID)
+}
+
+func (c *Cluster) removePVC(pvcName string) error {
+	err := c.config.KubeCli.Core().PersistentVolumeClaims(c.cluster.Namespace).Delete(pvcName, nil)
+	if err != nil && !k8sutil.IsKubernetesResourceNotFoundError(err) {
+		return fmt.Errorf("remove pvc (%s) failed: %v", pvcName, err)
 	}
 	return nil
 }

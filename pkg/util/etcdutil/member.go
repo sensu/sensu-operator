@@ -37,10 +37,11 @@ func (m *MemberConfig) ListenClientURL() string {
 
 // ListenPeerURL is the URL to listen on for peer connections
 func (m *MemberConfig) ListenPeerURL() string {
-	return fmt.Sprintf("%s://0.0.0.0:2380", m.peerScheme())
+	return fmt.Sprintf("%s://0.0.0.0:2380", m.PeerScheme())
 }
 
-func (m *MemberConfig) peerScheme() string {
+// PeerScheme returns http or https for the peer scheme
+func (m *MemberConfig) PeerScheme() string {
 	if m.SecurePeer {
 		return "https"
 	}

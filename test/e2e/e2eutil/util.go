@@ -22,7 +22,7 @@ import (
 
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -55,7 +55,7 @@ func DeleteDummyDeployment(kubecli kubernetes.Interface, nameSpace, name string)
 		GracePeriodSeconds: &gracePeriod,
 		PropagationPolicy:  &deletePolicy,
 	}
-	return kubecli.AppsV1beta1().Deployments(nameSpace).Delete(name, deleteOptions)
+	return kubecli.AppsV1().Deployments(nameSpace).Delete(name, deleteOptions)
 }
 
 func DeleteDummyPod(kubecli kubernetes.Interface, nameSpace, name string) error {

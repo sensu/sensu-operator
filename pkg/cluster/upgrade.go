@@ -16,6 +16,7 @@ package cluster
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
@@ -54,5 +55,23 @@ func (c *Cluster) upgradeOneMember(memberName string) error {
 		c.logger.Errorf("failed to create member upgraded event: %v", err)
 	}
 
+	return nil
+}
+
+func (c *Cluster) upgradeStatefulSet() error {
+	c.status.SetUpgradingCondition(c.cluster.Spec.Version)
+
+	targetVersion := strings.Split(c.statefulSet.Spec.Template.Spec.Containers[0].Image, ":")[1]
+	if targetVersion == c.cluster.Spec.Version {
+		c.logger.Debugf("Waiting for StatefulSet rolling update")
+		return nil
+	}
+	c.statefulSet.Spec.Template.Spec.Containers[0].Image = k8sutil.ImageName(c.cluster.Spec.Repository, c.cluster.Spec.Version)
+	k8sutil.SetPodTemplateSensuVersion(&c.statefulSet.Spec.Template, c.cluster.Spec.Version)
+	set, err := c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Update(c.statefulSet)
+	if err != nil {
+		return fmt.Errorf("failed to update sensu version in statefulset spec: %s", err)
+	}
+	c.statefulSet = set
 	return nil
 }

@@ -154,7 +154,7 @@ func (c *Controller) handleClusterEvent(event *Event) (bool, error) {
 		}
 		c.clusters[clus.Name].Delete()
 		deletionPolicy := v1.DeletePropagationBackground
-		err = c.KubeCli.AppsV1beta1().StatefulSets(clus.GetNamespace()).Delete(clus.GetName(), &v1.DeleteOptions{
+		err = c.KubeCli.AppsV1().StatefulSets(clus.GetNamespace()).Delete(clus.GetName(), &v1.DeleteOptions{
 			PropagationPolicy: &deletionPolicy,
 		})
 		if err != nil {

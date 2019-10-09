@@ -32,7 +32,7 @@ import (
 	"github.com/onrik/logrus/filename"
 	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +82,7 @@ type Cluster struct {
 	tlsConfig *tls.Config
 
 	eventsCli   corev1.EventInterface
-	statefulSet *appsv1beta1.StatefulSet
+	statefulSet *appsv1.StatefulSet
 }
 
 // New makes a new cluster
@@ -240,31 +240,31 @@ func (c *Cluster) run() {
 				c.status.Control()
 			}
 
-			running, pending, err := c.pollPods()
+			ready, notready, err := c.pollPods()
 			if err != nil {
 				c.logger.Errorf("fail to poll pods: %v", err)
 				reconcileFailed.WithLabelValues("failed to poll pods").Inc()
 				continue
 			}
 
-			if len(pending) > 0 {
+			if len(notready) > 0 {
 				// Pod startup might take long, e.g. pulling image. It would deterministically become running or succeeded/failed later.
-				c.logger.Infof("skip reconciliation: running (%v), pending (%v)", k8sutil.GetPodNames(running), k8sutil.GetPodNames(pending))
-				reconcileFailed.WithLabelValues("not all pods are running").Inc()
+				c.logger.Infof("skip reconciliation: ready (%v), not ready (%v)", k8sutil.GetPodNames(ready), k8sutil.GetPodNames(notready))
+				reconcileFailed.WithLabelValues("not all pods are ready").Inc()
 				continue
 			}
-			if len(running) == 0 {
+			if len(ready) == 0 {
 				// TODO: how to handle this case?
 				c.logger.Warningf("all etcd pods are dead.")
 				break
 			}
 
-			rerr = c.reconcile(running)
+			rerr = c.reconcile(ready)
 			if rerr != nil {
 				c.logger.Errorf("failed to reconcile: %v", rerr)
 				break
 			}
-			c.updateMemberStatus(running)
+			c.updateMemberStatus(ready)
 			if err := c.updateCRStatus(); err != nil {
 				c.logger.Warningf("periodic update CR status failed: %v", err)
 			}
@@ -319,7 +319,7 @@ func (c *Cluster) startStatefulSet() error {
 		return fmt.Errorf("failed to create statefulset (%s): %v", c.cluster.Name, err)
 	}
 
-	c.logger.Infof("cluster created with seed member (%s)", c.cluster.Name)
+	c.logger.Infof("cluster created with seed member (%s-0)", c.cluster.Name)
 	_, err := c.eventsCli.Create(k8sutil.NewMemberAddEvent(c.cluster))
 	if err != nil {
 		c.logger.Errorf("failed to create new member add event: %v", err)
@@ -371,28 +371,24 @@ func (c *Cluster) createStatefulSet(m *etcdutil.MemberConfig) error {
 	set := k8sutil.NewSensuStatefulSet(m, c.cluster.Name, uuid.New(), c.cluster.Spec, c.cluster.AsOwner())
 	if c.isPodPVEnabled() {
 		pvc := k8sutil.NewSensuPodPVC(m, *c.cluster.Spec.Pod.PersistentVolumeClaimSpec, c.cluster.Name, c.cluster.Namespace, c.cluster.AsOwner())
-		_, err = c.config.KubeCli.CoreV1().PersistentVolumeClaims(c.cluster.Namespace).Create(pvc)
-		if err != nil {
-			return fmt.Errorf("failed to create PVC for member (%s): %v", c.cluster.Name, err)
-		}
-		k8sutil.AddEtcdVolumeToPod(&set.Spec.Template, pvc)
+		set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *pvc)
 	} else {
 		k8sutil.AddEtcdVolumeToPod(&set.Spec.Template, nil)
 	}
-	c.statefulSet, err = c.config.KubeCli.AppsV1beta1().StatefulSets(c.cluster.Namespace).Create(set)
+	c.statefulSet, err = c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Create(set)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Cluster) pollPods() (running, pending []*v1.Pod, err error) {
+func (c *Cluster) pollPods() (ready, notready []*v1.Pod, err error) {
 	podList, err := c.config.KubeCli.Core().Pods(c.cluster.Namespace).List(k8sutil.ClusterListOpt(c.cluster.Name))
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to list running pods: %v", err)
 	}
 
-	set, err := c.config.KubeCli.AppsV1beta1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
+	set, err := c.config.KubeCli.AppsV1().StatefulSets(c.cluster.Namespace).Get(c.cluster.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to fetch new StatefulSet: %v", err)
 	}
@@ -413,16 +409,25 @@ func (c *Cluster) pollPods() (running, pending []*v1.Pod, err error) {
 			c.logger.Warningf("pollPods: ignore pod %v: owner (%v) is not %v",
 				pod.Name, pod.OwnerReferences[0].UID, c.statefulSet.UID)
 			continue
+
 		}
-		switch pod.Status.Phase {
-		case v1.PodRunning:
-			running = append(running, pod)
-		case v1.PodPending:
-			pending = append(pending, pod)
+		if allReady(pod.Status.ContainerStatuses) {
+			ready = append(ready, pod)
+		} else {
+			notready = append(notready, pod)
 		}
 	}
 
-	return running, pending, nil
+	return
+}
+
+func allReady(statuses []v1.ContainerStatus) bool {
+	for _, s := range statuses {
+		if !s.Ready {
+			return false
+		}
+	}
+	return true
 }
 
 func (c *Cluster) updateMemberStatus(running []*v1.Pod) {
@@ -531,4 +536,24 @@ func (c *Cluster) logSpecUpdate(oldSpec, newSpec api.ClusterSpec) {
 		c.logger.Info(m)
 	}
 
+}
+
+func (c *Cluster) memberName(num int) string {
+	return fmt.Sprintf("%s-%d", c.name(), num)
+}
+
+func (c *Cluster) ClientURLs(m *etcdutil.MemberConfig) (urls []string) {
+	for i := 0; i < c.status.Size; i++ {
+		urls = append(urls, c.PeerURL(m, i))
+	}
+	return
+}
+
+func (c *Cluster) PeerURL(m *etcdutil.MemberConfig, ordinalID int) string {
+	return fmt.Sprintf("%s://%s.%s.%s.svc:2380",
+		m.PeerScheme(),
+		c.memberName(ordinalID),
+		c.name(),
+		c.cluster.Namespace,
+	)
 }

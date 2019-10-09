@@ -20,8 +20,8 @@ import (
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	"k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -87,13 +87,13 @@ func NewEtcdService(clusterName, serviceName string) *v1.Service {
 	}
 }
 
-func NewDummyDeployment(clusterName string) *appsv1beta1.Deployment {
+func NewDummyDeployment(clusterName string) *appsv1.Deployment {
 	replicas := int32(2)
-	return &appsv1beta1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "dummy-service-",
 		},
-		Spec: appsv1beta1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

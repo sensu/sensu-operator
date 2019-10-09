@@ -56,7 +56,7 @@ kubectl apply -f example/deployment.yaml
 You should end up with 1 running pods, e.g.:
 
 ```bash
-$ kubectl get pods -l name=sensu-operator
+$ kubectl -n sensu get pods -l name=sensu-operator
 NAME                              READY     STATUS    RESTARTS   AGE
 sensu-operator-6444f68845-54bvs   1/1       Running   0          1m
 ```
@@ -79,7 +79,7 @@ ws://example-sensu-cluster-agent.sensu.svc.cluster.local:8081
 If needed, login into the sensu backend UI:
 
 ```bash
-kubectl -n sensu port-forward pod/platdev0-0 3000:3000
+$ kubectl -n sensu port-forward service/platdev0-dashboard 3000:3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 ```
