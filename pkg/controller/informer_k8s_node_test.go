@@ -6,6 +6,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	corev1 "k8s.io/api/core/v1"
+
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 	"github.com/objectrocket/sensu-operator/pkg/cluster"
 	fakesensu "github.com/objectrocket/sensu-operator/pkg/generated/clientset/versioned/fake"
@@ -15,8 +17,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func TestController_syncSensuAsset(t *testing.T) {
-	assetInformer, checkInformer, handlerInformer, eventFilterInformer, nodeInformer := initInformers()
+func TestController_syncNodeHandler(t *testing.T) {
+	assetInformer, checkInformer, handlerInformer, eventFilterHandler, nodeInformer := initInformers()
 	type fields struct {
 		logger     *logrus.Entry
 		Config     Config
@@ -27,12 +29,12 @@ func TestController_syncSensuAsset(t *testing.T) {
 	tests := []struct {
 		name     string
 		fields   fields
-		asset    *api.SensuAsset
-		initFunc func(*testing.T, *Controller, *api.SensuAsset)
-		testFunc func(*Controller, *api.SensuAsset) error
+		node     *corev1.Node
+		initFunc func(*testing.T, *Controller, *corev1.Node)
+		testFunc func(*Controller, *corev1.Node) error
 	}{
 		{
-			"test asset status is updated when cluster is missing",
+			"test node still exists after syncing nodes",
 			fields{
 				logrus.WithField("pkg", "test"),
 				Config{
@@ -50,39 +52,18 @@ func TestController_syncSensuAsset(t *testing.T) {
 				map[string]cache.Indexer{},
 				map[string]*cluster.Cluster{},
 			},
-			&api.SensuAsset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "testAsset",
-					Namespace: "sensu",
-				},
-				Spec: api.SensuAssetSpec{
-					URL:          "fake",
-					Sha512:       "fakeSHA",
-					Organization: "fakeOrg",
-					SensuMetadata: api.ObjectMeta{
-						Name:        "testAsset",
-						Namespace:   "default",
-						ClusterName: "doesntExist",
-					},
-				},
-			},
-			func(t *testing.T, c *Controller, a *api.SensuAsset) {
-				_, err := c.SensuCRCli.ObjectrocketV1beta1().SensuAssets("sensu").Create(a)
+			&corev1.Node{},
+			func(t *testing.T, c *Controller, node *corev1.Node) {
+				_, err := c.KubeCli.CoreV1().Nodes().Create(node)
 				if err != nil {
 					t.Error(err)
 				}
 			},
-			func(c *Controller, a *api.SensuAsset) error {
-				c.syncSensuAsset(a)
-				k8sAsset, err := c.SensuCRCli.ObjectrocketV1beta1().SensuAssets("sensu").Get("testAsset", metav1.GetOptions{})
+			func(c *Controller, node *corev1.Node) error {
+				c.syncNode(node)
+				node, err := c.KubeCli.CoreV1().Nodes().Get(node.GetName(), metav1.GetOptions{})
 				if err != nil {
-					return errors.New("failed to find asset in k8s")
-				}
-				if k8sAsset.Status.Accepted {
-					return errors.New("asset status should not be accepted=true")
-				}
-				if k8sAsset.Status.LastError == "" {
-					return errors.New("asset status lastError should not be empty")
+					return errors.New("failed to find node in k8s")
 				}
 				return nil
 			},
@@ -100,12 +81,12 @@ func TestController_syncSensuAsset(t *testing.T) {
 			c.informers[api.SensuAssetResourcePlural] = &assetInformer
 			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
-			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
+			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterHandler
 			c.informers["nodes"] = &nodeInformer
-			tt.initFunc(t, c, tt.asset)
-			c.syncSensuAsset(tt.asset)
-			if err := tt.testFunc(c, tt.asset); err != nil {
-				t.Errorf("Controller.syncSensuAsset() error = %v", err)
+			tt.initFunc(t, c, tt.node)
+			c.syncNode(tt.node)
+			if err := tt.testFunc(c, tt.node); err != nil {
+				t.Errorf("Controller.syncNode() error = %v", err)
 			}
 		})
 	}
