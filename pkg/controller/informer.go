@@ -26,17 +26,17 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	// "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kwatch "k8s.io/apimachinery/pkg/watch"
 
-	// informers_corev1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
+
+const CoreV1NodesPlural = "nodes"
 
 // TODO: get rid of this once we use workqueue
 var pt *panicTimer
@@ -72,8 +72,7 @@ func (c *Controller) Start(ctx context.Context) {
 	c.addInformer(ns, api.SensuCheckConfigResourcePlural, &api.SensuCheckConfig{})
 	c.addInformer(ns, api.SensuHandlerResourcePlural, &api.SensuHandler{})
 	c.addInformer(ns, api.SensuEventFilterResourcePlural, &api.SensuEventFilter{})
-	c.addInformerWithCacheGetter(c.Config.KubeCli.CoreV1().RESTClient(), metav1.NamespaceAll, "nodes", &corev1.Node{})
-	// c.addNodeInformer()
+	c.addInformerWithCacheGetter(c.Config.KubeCli.CoreV1().RESTClient(), metav1.NamespaceAll, CoreV1NodesPlural, &corev1.Node{})
 	c.startProcessing(ctx)
 }
 
@@ -91,7 +90,7 @@ func (c *Controller) startProcessing(ctx context.Context) {
 	checkconfigController = c.informers[api.SensuCheckConfigResourcePlural].controller
 	handlerController = c.informers[api.SensuHandlerResourcePlural].controller
 	eventFilterController = c.informers[api.SensuEventFilterResourcePlural].controller
-	nodeController = c.informers["nodes"].controller
+	nodeController = c.informers[CoreV1NodesPlural].controller
 	go clusterController.Run(ctx.Done())
 	go assetController.Run(ctx.Done())
 	go checkconfigController.Run(ctx.Done())
@@ -132,57 +131,6 @@ func (c *Controller) startProcessing(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 	}
-}
-
-func (c *Controller) addNodeInformer() {
-	var (
-		informer Informer
-	)
-	c.logger.Debugf("starting adding node informer")
-	c.logger.Debugf("getting new rate limiting queue")
-	informer.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	source := cache.NewListWatchFromClient(
-		c.KubeCli.CoreV1().RESTClient(),
-		"nodes",
-		"",
-		fields.Everything())
-	c.logger.Debugf("getting new node shared index informer")
-	sharedInformer := cache.NewSharedIndexInformer(
-		source,
-		&corev1.Node{},
-		c.Config.ResyncPeriod,
-		cache.Indexers{},
-	)
-	// sharedInformer := informers_corev1.NewNodeInformer(c.Config.KubeCli, c.Config.ResyncPeriod, cache.Indexers{})
-	c.logger.Debugf("got new node shared index informer: %+v", sharedInformer)
-	c.logger.Debugf("adding event handlers to node shared index informer")
-	sharedInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
-				informer.queue.Add(key)
-			}
-		},
-		UpdateFunc: func(old interface{}, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				informer.queue.Add(key)
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
-			// key function.
-			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-			if err == nil {
-				informer.queue.Add(key)
-			}
-		},
-	})
-	informer.controller = sharedInformer.GetController()
-	informer.indexer = sharedInformer.GetIndexer()
-	c.logger.Debugf("setting informers map for nodes")
-	c.informers["nodes"] = &informer
-	c.logger.Debugf("done setting up node shared index informer")
 }
 
 func (c *Controller) addInformerWithCacheGetter(getter cache.Getter, namespace, resourcePlural string, objType runtime.Object) {
@@ -271,7 +219,7 @@ func (c *Controller) run() {
 	}()
 	go func() {
 		defer wg.Done()
-		defer c.informers["nodes"].queue.ShutDown()
+		defer c.informers[CoreV1NodesPlural].queue.ShutDown()
 		c.logger.Debugf("starting processing of node items")
 		for c.processNextNodeItem() {
 		}
@@ -451,36 +399,24 @@ func (c *Controller) processNextEventFilterItem() bool {
 }
 
 func (c *Controller) processNextNodeItem() bool {
-	var nodesInformer = c.informers["nodes"]
-	c.logger.Debugf("in processNextNodeItem: getting key from queue")
+	var nodesInformer = c.informers[CoreV1NodesPlural]
 	key, quit := nodesInformer.queue.Get()
-	c.logger.Debugf("got key '%s', quit '%t' from queue", key, quit)
 	if quit {
-		c.logger.Debugf("got quit while processing next node item, returning")
 		return false
 	}
 	defer nodesInformer.queue.Done(key)
-	c.logger.Debugf("getting object by key from index informer")
 	obj, exists, err := nodesInformer.indexer.GetByKey(key.(string))
-	c.logger.Debugf("got object %+v, exists %t, err %+v from index informer", obj, exists, err)
 	if err != nil {
-		c.logger.Debugf("got error while getting object by key from index informer")
 		if nodesInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
-			c.logger.Debugf("retries left, so re-queueing item")
 			nodesInformer.queue.AddRateLimited(key)
 			return true
 		}
 	} else {
-		c.logger.Debugf("no error while getting object by key from index informer")
 		if exists {
-			c.logger.Debugf("object exists while getting object bby key from index informer")
 			if obj != nil {
-				c.logger.Debugf("object ! nil while getting object bby key from index informer")
-				c.logger.Debugf("calling onUpdateNode for node %+v", obj)
 				c.onUpdateNode(obj.(*corev1.Node))
 			}
 		} else {
-			c.logger.Debugf("node %s appears to have been deleted, so calling onDeleteNode", key.(string))
 			c.onDeleteNode(key.(string))
 		}
 	}

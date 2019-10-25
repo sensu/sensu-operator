@@ -8,9 +8,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"k8s.io/apimachinery/pkg/labels"
-
-	"github.com/sensu/sensu-go/cli/client"
 	"github.com/sensu/sensu-go/types"
 )
 
@@ -65,26 +62,24 @@ func (s *SensuClient) ensureDeleteNode(nodeName string) error {
 func (s *SensuClient) fetchEntity(nodeName string) (*types.Entity, error) {
 	var (
 		entity   *types.Entity
-		entities []types.Entity
 		err      error
 	)
 	c1 := make(chan fetchEntityResponse, 1)
 	go func() {
-		if entities, err = s.sensuCli.Client.ListEntities(platformSensuNamespace, &client.ListOptions{
-			LabelSelector: labels.FormatLabels(map[string]string{"k8s_node": nodeName}),
-		}); err != nil {
-			s.logger.Warnf("failed to retrieve entities from namespace %s, err: %+v", platformSensuNamespace, err)
-			c1 <- fetchEntityResponse{nil, errors.Wrapf(err, "failed to retrieve entities from namespace %s", platformSensuNamespace)}
+		// Would love to use ListOptions{LabelSelector}, but that is an enterprise feature
+		// if entities, err = s.sensuCli.Client.ListEntities(platformSensuNamespace, &client.ListOptions{
+		// 	LabelSelector: labels.FormatLabels(map[string]string{"k8s_node": nodeName}),
+		// })
+		if entity, err = s.sensuCli.Client.FetchEntity(nodeName); err != nil {
+			s.logger.Warnf("failed to retrieve entity %s from namespace %s, err: %+v", nodeName, platformSensuNamespace, err)
+			c1 <- fetchEntityResponse{nil, errors.Wrapf(err, "failed to retrieve entity %s from namespace %s", nodeName, platformSensuNamespace)}
 		}
-		for _, entity := range entities {
-			if val, ok := entity.GetLabels()["k8s_node"]; ok {
-				if val == nodeName {
-					s.logger.Debugf("found entity %+v", entity)
-					c1 <- fetchEntityResponse{&entity, nil}
-					return
-				}
-			}
+		if entity != nil {
+			s.logger.Debugf("found entity %s", entity.String())
+			c1 <- fetchEntityResponse{entity, nil}
+			return
 		}
+		s.logger.Debugf("nil entity was return for nodeName %s", nodeName)
 		c1 <- fetchEntityResponse{nil, nil}
 	}()
 

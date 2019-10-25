@@ -98,7 +98,7 @@ func TestController_syncSensuCheckConfig(t *testing.T) {
 			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
-			c.informers["nodes"] = &nodeInformer
+			c.informers[CoreV1NodesPlural] = &nodeInformer
 			tt.initFunc(t, c, tt.check)
 			c.syncSensuCheckConfig(tt.check)
 			if err := tt.testFunc(c, tt.check); err != nil {

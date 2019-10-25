@@ -121,7 +121,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 	controller.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
-	controller.informers["nodes"] = &nodeInformer
+	controller.informers[CoreV1NodesPlural] = &nodeInformer
 
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
@@ -230,7 +230,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 	controller.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
-	controller.informers["nodes"] = &nodeInformer
+	controller.informers[CoreV1NodesPlural] = &nodeInformer
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
 	probe.SetReady()
@@ -424,7 +424,7 @@ func TestController_initCRD(t *testing.T) {
 			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
-			c.informers["nodes"] = &nodeInformer
+			c.informers[CoreV1NodesPlural] = &nodeInformer
 			if err := c.initCRD(); (err != nil) != tt.wantErr {
 				t.Errorf("Controller.initCRD() error = %v, wantErr %v", err, tt.wantErr)
 			}
