@@ -18,8 +18,8 @@ func (c *Controller) onUpdateNode(newObj interface{}) {
 }
 
 func (c *Controller) onDeleteNode(nodeName string) {
-	c.logger.Debugf("in onDeleteNode, attempting to see if cluster %s exists", platformSensuClusterName)
 	for clusterName := range c.clusters {
+		c.logger.Debugf("in onDeleteNode, attempting to see if cluster %s exists", platformSensuClusterName)
 		if c.clusterExists(clusterName) {
 			c.logger.Debugf("in onDeleteNode, cluster %s exists", clusterName)
 			c.logger.Debugf("getting client for cluster %s, k8s namespace %s, sensu namespace %s", clusterName, platformKubernetesNamespace, platformSensuNamespace)
