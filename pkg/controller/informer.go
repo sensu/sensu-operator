@@ -24,14 +24,20 @@ import (
 	"github.com/objectrocket/sensu-operator/pkg/util/k8sutil"
 	"github.com/objectrocket/sensu-operator/pkg/util/probe"
 
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kwatch "k8s.io/apimachinery/pkg/watch"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
+
+// CoreV1NodesPlural is the plural for a kubernetes Node
+const CoreV1NodesPlural = "nodes"
 
 // TODO: get rid of this once we use workqueue
 var pt *panicTimer
@@ -67,6 +73,7 @@ func (c *Controller) Start(ctx context.Context) {
 	c.addInformer(ns, api.SensuCheckConfigResourcePlural, &api.SensuCheckConfig{})
 	c.addInformer(ns, api.SensuHandlerResourcePlural, &api.SensuHandler{})
 	c.addInformer(ns, api.SensuEventFilterResourcePlural, &api.SensuEventFilter{})
+	c.addInformerWithCacheGetter(c.Config.KubeCli.CoreV1().RESTClient(), metav1.NamespaceAll, CoreV1NodesPlural, &corev1.Node{})
 	c.startProcessing(ctx)
 }
 
@@ -77,53 +84,70 @@ func (c *Controller) startProcessing(ctx context.Context) {
 		checkconfigController hasSynced
 		handlerController     hasSynced
 		eventFilterController hasSynced
+		nodeController        hasSynced
 	)
 	clusterController = c.informers[api.SensuClusterResourcePlural].controller
 	assetController = c.informers[api.SensuAssetResourcePlural].controller
 	checkconfigController = c.informers[api.SensuCheckConfigResourcePlural].controller
 	handlerController = c.informers[api.SensuHandlerResourcePlural].controller
 	eventFilterController = c.informers[api.SensuEventFilterResourcePlural].controller
+	nodeController = c.informers[CoreV1NodesPlural].controller
 	go clusterController.Run(ctx.Done())
 	go assetController.Run(ctx.Done())
 	go checkconfigController.Run(ctx.Done())
 	go handlerController.Run(ctx.Done())
 	go eventFilterController.Run(ctx.Done())
+	c.logger.Debugf("about to call run on node Controller %+v", nodeController)
+	go nodeController.Run(ctx.Done())
+	c.logger.Debugf("waiting for cluster controller caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), clusterController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for cluster caches to sync")
 	}
+	c.logger.Debugf("waiting for assetController caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), assetController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for asset caches to sync")
 	}
+	c.logger.Debugf("waiting for checkconfigController caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), checkconfigController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for checkconfig caches to sync")
 	}
+	c.logger.Debugf("waiting for handlerController caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), handlerController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for handler caches to sync")
 	}
+	c.logger.Debugf("waiting for eventFilterController caches to sync")
 	if !cache.WaitForCacheSync(ctx.Done(), eventFilterController.HasSynced) {
 		c.logger.Fatal("Timed out waiting for event filter caches to sync")
 	}
+	c.logger.Debugf("waiting for nodeController caches to sync")
+	if !cache.WaitForCacheSync(ctx.Done(), nodeController.HasSynced) {
+		c.logger.Fatal("Timed out waiting for node caches to sync")
+	}
+	c.logger.Debugf("finished waiting for all caches to sync")
+	c.logger.Debugf("about to spawn %d worker threads", c.WorkerThreads)
 	for i := 0; i < c.Config.WorkerThreads; i++ {
 		go wait.Until(c.run, time.Second, ctx.Done())
 	}
+	c.logger.Debugf("done spawning %d worker threads", c.WorkerThreads)
 	select {
 	case <-ctx.Done():
 	}
 }
 
-func (c *Controller) addInformer(namespace string, resourcePlural string, objType runtime.Object) {
+func (c *Controller) addInformerWithCacheGetter(getter cache.Getter, namespace, resourcePlural string, objType runtime.Object) {
 	var (
 		informer Informer
 		source   *cache.ListWatch
 	)
 	informer.queue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	source = cache.NewListWatchFromClient(
-		c.Config.SensuCRCli.ObjectrocketV1beta1().RESTClient(),
+		getter,
 		resourcePlural,
 		namespace,
 		fields.Everything())
 	// create finalizer to ensure that sensu server objects are deleted when crd is deleted
 	finalizer := cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
+	c.logger.Debugf("getting a new indexer informer with resync period of %s", c.ResyncPeriod.String())
 	informer.indexer, informer.controller = cache.NewIndexerInformer(source, objType, c.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
@@ -152,40 +176,58 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 	c.finalizers[resourcePlural] = finalizer
 }
 
+func (c *Controller) addInformer(namespace string, resourcePlural string, objType runtime.Object) {
+	c.addInformerWithCacheGetter(c.Config.SensuCRCli.ObjectrocketV1beta1().RESTClient(), namespace, resourcePlural, objType)
+}
+
 func (c *Controller) run() {
 	var wg sync.WaitGroup
-	wg.Add(4)
+	wg.Add(5)
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuClusterResourcePlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of cluster items")
 		for c.processNextClusterItem() {
 		}
 	}()
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuAssetResourcePlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of asset items")
 		for c.processNextAssetItem() {
 		}
 	}()
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuCheckConfigResourcePlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of checkconfig items")
 		for c.processNextCheckConfigItem() {
 		}
 	}()
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuHandlerResourcePlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of handler items")
 		for c.processNextHandlerItem() {
 		}
 	}()
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuEventFilterResourcePlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of event filter items")
 		for c.processNextEventFilterItem() {
 		}
 	}()
+	go func() {
+		defer wg.Done()
+		defer c.informers[CoreV1NodesPlural].queue.ShutDown()
+		c.logger.Debugf("starting processing of node items")
+		for c.processNextNodeItem() {
+		}
+	}()
+	c.logger.Debugf("waiting on all waitgroups to finish")
 	wg.Wait()
+	c.logger.Debugf("waitgroups finished")
 }
 
 func (c *Controller) processNextClusterItem() bool {
@@ -354,6 +396,32 @@ func (c *Controller) processNextEventFilterItem() bool {
 		}
 	}
 	eventFilterInformer.queue.Forget(key)
+	return true
+}
+
+func (c *Controller) processNextNodeItem() bool {
+	var nodesInformer = c.informers[CoreV1NodesPlural]
+	key, quit := nodesInformer.queue.Get()
+	if quit {
+		return false
+	}
+	defer nodesInformer.queue.Done(key)
+	obj, exists, err := nodesInformer.indexer.GetByKey(key.(string))
+	if err != nil {
+		if nodesInformer.queue.NumRequeues(key) < c.Config.ProcessingRetries {
+			nodesInformer.queue.AddRateLimited(key)
+			return true
+		}
+	} else {
+		if exists {
+			if obj != nil {
+				c.onUpdateNode(obj.(*corev1.Node))
+			}
+		} else {
+			c.onDeleteNode(key.(string))
+		}
+	}
+	nodesInformer.queue.Forget(key)
 	return true
 }
 

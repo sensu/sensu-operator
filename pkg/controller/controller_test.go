@@ -88,6 +88,7 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 		checkInformer       Informer
 		handlerInformer     Informer
 		eventFilterInformer Informer
+		nodeInformer        Informer
 	)
 
 	controller := New(Config{
@@ -113,10 +114,14 @@ func (s *InformerTestSuite) TestInformerWithNoEvents() {
 	eventFilterInformer.indexer = fakeIndexer{}
 	eventFilterInformer.controller = fakeController{}
 	eventFilterInformer.queue = fakeQueue{}
+	nodeInformer.indexer = fakeIndexer{}
+	nodeInformer.controller = fakeController{}
+	nodeInformer.queue = fakeQueue{}
 	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
 	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 	controller.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
+	controller.informers[CoreV1NodesPlural] = &nodeInformer
 
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
@@ -192,6 +197,7 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 		checkInformer       Informer
 		handlerInformer     Informer
 		eventFilterInformer Informer
+		nodeInformer        Informer
 	)
 
 	controller := New(Config{
@@ -217,10 +223,14 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	eventFilterInformer.indexer = fakeIndexer{}
 	eventFilterInformer.controller = fakeController{}
 	eventFilterInformer.queue = fakeQueue{}
+	nodeInformer.indexer = fakeIndexer{}
+	nodeInformer.controller = fakeController{}
+	nodeInformer.queue = fakeQueue{}
 	controller.informers[api.SensuAssetResourcePlural] = &assetInformer
 	controller.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 	controller.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 	controller.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
+	controller.informers[CoreV1NodesPlural] = &nodeInformer
 	err := controller.initResource()
 	s.Require().NoErrorf(err, "Failed to init resources: %v", err)
 	probe.SetReady()
@@ -339,12 +349,13 @@ func (s *InformerTestSuite) TestInformerWithOneCluster() {
 	cancelFunc()
 }
 
-func initInformers() (Informer, Informer, Informer, Informer) {
+func initInformers() (Informer, Informer, Informer, Informer, Informer) {
 	var (
 		assetInformer       Informer
 		checkInformer       Informer
 		handlerInformer     Informer
 		eventFilterInformer Informer
+		nodeInformer        Informer
 	)
 	assetInformer.indexer = fakeIndexer{}
 	assetInformer.controller = fakeController{}
@@ -358,11 +369,14 @@ func initInformers() (Informer, Informer, Informer, Informer) {
 	eventFilterInformer.indexer = fakeIndexer{}
 	eventFilterInformer.controller = fakeController{}
 	eventFilterInformer.queue = fakeQueue{}
-	return assetInformer, checkInformer, handlerInformer, eventFilterInformer
+	nodeInformer.indexer = fakeIndexer{}
+	nodeInformer.controller = fakeController{}
+	nodeInformer.queue = fakeQueue{}
+	return assetInformer, checkInformer, handlerInformer, eventFilterInformer, nodeInformer
 }
 
 func TestController_initCRD(t *testing.T) {
-	assetInformer, checkInformer, handlerInformer, eventFilterInformer := initInformers()
+	assetInformer, checkInformer, handlerInformer, eventFilterInformer, nodeInformer := initInformers()
 	type fields struct {
 		logger     *logrus.Entry
 		Config     Config
@@ -410,6 +424,7 @@ func TestController_initCRD(t *testing.T) {
 			c.informers[api.SensuCheckConfigResourcePlural] = &checkInformer
 			c.informers[api.SensuHandlerResourcePlural] = &handlerInformer
 			c.informers[api.SensuEventFilterResourcePlural] = &eventFilterInformer
+			c.informers[CoreV1NodesPlural] = &nodeInformer
 			if err := c.initCRD(); (err != nil) != tt.wantErr {
 				t.Errorf("Controller.initCRD() error = %v, wantErr %v", err, tt.wantErr)
 			}
