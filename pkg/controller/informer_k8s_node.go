@@ -19,15 +19,19 @@ func (c *Controller) onUpdateNode(newObj interface{}) {
 
 func (c *Controller) onDeleteNode(nodeName string) {
 	c.logger.Debugf("in onDeleteNode, attempting to see if cluster %s exists", platformSensuClusterName)
-	if c.clusterExists(platformSensuClusterName) {
-		c.logger.Debugf("in onDeleteNode, cluster %s exists", platformSensuClusterName)
-		c.logger.Debugf("getting client for cluster %s, k8s namespace %s, sensu namespace %s", platformSensuClusterName, platformKubernetesNamespace, platformSensuNamespace)
-		sensuClient := sensu_client.New(platformSensuClusterName, platformKubernetesNamespace, platformSensuNamespace)
-		c.logger.Debugf("calling sensuClient.DeleteNode")
-		err := sensuClient.DeleteNode(nodeName)
-		if err != nil {
-			c.logger.Warningf("failed to handle node delete event: %v", err)
-			return
+	for clusterName := range c.clusters {
+		if c.clusterExists(clusterName) {
+			c.logger.Debugf("in onDeleteNode, cluster %s exists", clusterName)
+			c.logger.Debugf("getting client for cluster %s, k8s namespace %s, sensu namespace %s", clusterName, platformKubernetesNamespace, platformSensuNamespace)
+			// Being that the cluster nodes are *not* a CR, and don't have the metadata for the sensu namespace, and k8s namespace,
+			// we can only inspect the entities in the platform sensu namespace
+			sensuClient := sensu_client.New(clusterName, platformKubernetesNamespace, platformSensuNamespace)
+			c.logger.Debugf("calling sensuClient.DeleteNode")
+			err := sensuClient.DeleteNode(nodeName)
+			if err != nil {
+				c.logger.Warningf("failed to handle node delete event: %v", err)
+				return
+			}
 		}
 	}
 	c.logger.Debugf("in onDeleteNode, end of func")

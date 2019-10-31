@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+// CoreV1NodesPlural is the plural for a kubernetes Node
 const CoreV1NodesPlural = "nodes"
 
 // TODO: get rid of this once we use workqueue

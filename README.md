@@ -158,7 +158,8 @@ $ cat <<EOF >s3creds/config
 region = YOUR_BUCKET_REGION
 EOF
 
-kubectl create secret generic sensu-backups-aws-secret --from-file s3creds/credentials --from-file s3creds/config
+$ kubectl create secret generic sensu-backups-aws-secret --from-file s3creds/credentials --from-file s3creds/config
+secret "sensu-backups-aws-secret" created
 ```
 
 ### Backup

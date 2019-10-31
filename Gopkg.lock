@@ -274,6 +274,20 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:1d1cbf539d9ac35eb3148129f96be5537f1a1330cadcc7e3a83b4e72a59672a3"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/flags",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
+  pruneopts = "UT"
+  revision = "2d0692c2e9617365a95b295612ac0d4415ba4627"
+  version = "v0.3.1"
+
+[[projects]]
   digest = "1:41bfd4219241b7f7d6e6fdb13fc712576f1337e68e6b895136283b76928fdd66"
   name = "github.com/google/gofuzz"
   packages = ["."]
@@ -1013,13 +1027,11 @@
   version = "kubernetes-1.13.1"
 
 [[projects]]
-  digest = "1:af6d677ffc25e748bc8c4eb402ea3ecec84b6d1a9f305957466618f16124c22b"
+  digest = "1:fee8557c522ec4908adadb1f05778d179f7c0edff4f51a6d582fa1c4f83f5371"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
     "discovery/fake",
-    "informers/core/v1",
-    "informers/internalinterfaces",
     "kubernetes",
     "kubernetes/fake",
     "kubernetes/scheme",
@@ -1087,7 +1099,6 @@
     "kubernetes/typed/storage/v1alpha1/fake",
     "kubernetes/typed/storage/v1beta1",
     "kubernetes/typed/storage/v1beta1/fake",
-    "listers/core/v1",
     "pkg/apis/clientauthentication",
     "pkg/apis/clientauthentication/v1alpha1",
     "pkg/apis/clientauthentication/v1beta1",
@@ -1219,6 +1230,7 @@
     "github.com/coreos/etcd/pkg/transport",
     "github.com/ghodss/yaml",
     "github.com/go-openapi/spec",
+    "github.com/google/go-cmp/cmp",
     "github.com/json-iterator/go",
     "github.com/onrik/logrus/filename",
     "github.com/pborman/uuid",
@@ -1256,7 +1268,6 @@
     "k8s.io/apimachinery/pkg/watch",
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
-    "k8s.io/client-go/informers/core/v1",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/kubernetes/fake",
     "k8s.io/client-go/kubernetes/scheme",
