@@ -1,4 +1,13 @@
-version: 2
+version: 2.1
+
+references: 
+  platform-docker: &docker
+    docker:
+      - image: objectrocket/platform-cicd:latest
+        auth:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
+
 jobs:
   markdownlint:
     docker:
@@ -48,11 +57,7 @@ jobs:
           command: |
             make docker-push IMAGE_VERSION=${CIRCLE_TAG}
   helm_push:
-    docker:
-      - image: objectrocket/platform-cicd:latest
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASS
+    <<: *docker
     environment:
       CHARTSDIR: helm
     steps:
@@ -61,11 +66,7 @@ jobs:
           name: Push to S3
           command: ~/ci-scripts/helm_push.sh
   update-default:
-    docker:
-      - image: objectrocket/platform-cicd:latest
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASS
+    <<: *docker
     environment:
       CHARTSDIR: helm
     steps:
