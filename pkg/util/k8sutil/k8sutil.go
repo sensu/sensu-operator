@@ -640,9 +640,10 @@ func NewSensuStatefulSet(m *etcdutil.MemberConfig, clusterName, token string, cs
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podTemplate.ObjectMeta.Labels,
 			},
-			Template:    *podTemplate,
-			ServiceName: clusterName,
-			Replicas:    newInt32(1),
+			Template:            *podTemplate,
+			ServiceName:         clusterName,
+			Replicas:            newInt32(1),
+			PodManagementPolicy: appsv1.ParallelPodManagement,
 		},
 	}
 	return statefulSet

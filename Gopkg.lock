@@ -274,6 +274,20 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:1d1cbf539d9ac35eb3148129f96be5537f1a1330cadcc7e3a83b4e72a59672a3"
+  name = "github.com/google/go-cmp"
+  packages = [
+    "cmp",
+    "cmp/internal/diff",
+    "cmp/internal/flags",
+    "cmp/internal/function",
+    "cmp/internal/value",
+  ]
+  pruneopts = "UT"
+  revision = "2d0692c2e9617365a95b295612ac0d4415ba4627"
+  version = "v0.3.1"
+
+[[projects]]
   digest = "1:41bfd4219241b7f7d6e6fdb13fc712576f1337e68e6b895136283b76928fdd66"
   name = "github.com/google/gofuzz"
   packages = ["."]
@@ -1216,6 +1230,7 @@
     "github.com/coreos/etcd/pkg/transport",
     "github.com/ghodss/yaml",
     "github.com/go-openapi/spec",
+    "github.com/google/go-cmp/cmp",
     "github.com/json-iterator/go",
     "github.com/onrik/logrus/filename",
     "github.com/pborman/uuid",
@@ -1230,7 +1245,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
     "github.com/stretchr/testify/suite",
-    "k8s.io/api/apps/v1beta1",
+    "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",
     "k8s.io/api/networking/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
