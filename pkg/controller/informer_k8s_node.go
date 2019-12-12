@@ -37,6 +37,7 @@ func (c *Controller) onDeleteNode(nodeName string) {
 	c.logger.Debugf("in onDeleteNode, end of func")
 }
 
-func (c *Controller) syncNode(*corev1.Node) {
+func (c *Controller) syncNode(node *corev1.Node) {
 	c.logger.Debugf("in syncNode, doing nothing")
+	c.logger.Debugf("node name %v", node.GetName())
 }
