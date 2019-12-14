@@ -48,7 +48,7 @@ func New(clusterName, namespace string, sensuNamespace string) *SensuClient {
 		namespace:   namespace,
 		timeout:     time.Duration(defaultTimeout),
 	}
-	sClient.logger.Debugf("Created new sensuClient with clusterName: %s, namespace %s", clusterName, namespace)
+	sClient.logger.Debugf("Created new sensuClient with clusterName: %s, namespace %s, sensu-namespace: %v", clusterName, namespace, sensuNamespace)
 	sClient.logger.Debugf("makeFullyQualifiedSensuClientURL returns: %s", sClient.makeFullyQualifiedSensuClientURL())
 	conf := basic.Config{
 		Cluster: basic.Cluster{

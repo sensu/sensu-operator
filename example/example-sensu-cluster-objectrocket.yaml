@@ -17,4 +17,4 @@ spec:
       storageClassName: standard
   repository: sensu/sensu
   size: 1
-  version: 5.13.1
+  version: 5.14.0
