@@ -1,6 +1,6 @@
 version: 2.1
 
-references: 
+references:
   platform-docker: &docker
     docker:
       - image: objectrocket/platform-cicd:latest
@@ -73,7 +73,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae"   
+            - "69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae"
       - run:
           name: add helm repo
           command: ~/ci-scripts/helm_add_repo.sh
@@ -107,6 +107,7 @@ workflows:
             branches:
               ignore: /.*/
       - helm_push:
+          context: platform-eng
           requires:
             - build_deploy
           filters:
@@ -117,6 +118,7 @@ workflows:
             branches:
               ignore: /.*/
       - update-default:
+          context: platform-eng
           requires:
             - build_deploy
             - helm_push
