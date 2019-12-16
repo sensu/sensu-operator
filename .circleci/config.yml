@@ -107,6 +107,7 @@ workflows:
             branches:
               ignore: /.*/
       - helm_push:
+          context: platform-eng
           requires:
             - build_deploy
           filters:
@@ -117,6 +118,7 @@ workflows:
             branches:
               ignore: /.*/
       - update-default:
+          context: platform-eng
           requires:
             - build_deploy
             - helm_push
