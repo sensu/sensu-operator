@@ -248,7 +248,7 @@ func (c *Controller) runReconcile() {
 func (c *Controller) processReconcileItems() bool {
 	c.logger.Debugf("At processReconcileItems, initiating sync process")
 	c.reconcileSensuEntities()
-	time.Sleep(60 * time.Second)
+	time.Sleep(3 * time.Minute)
 	return true
 }
 

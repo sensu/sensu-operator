@@ -31,6 +31,21 @@ func (s *SensuClient) AddNode(node *corev1.Node) error {
 	return s.ensureNode(node)
 }
 
+// GetNode will list an entitiy from sensu
+func (s *SensuClient) GetNode(nodeName string) (string, error) {
+	if err := s.ensureCredentials(); err != nil {
+		return "", errors.Wrap(err, "failed to ensure credentials for sensu client")
+	}
+	entity, err := s.fetchEntity(nodeName)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to find entity from node name %s", nodeName)
+	}
+	if entity == nil {
+		return "", errors.New(fmt.Sprintf("failed to find entity from node name %s; empty entity", nodeName))
+	}
+	return entity.GetName(), nil
+}
+
 // UpdateNode will do nothing on a k8s node being added/updated/reconciled, for now
 func (s *SensuClient) UpdateNode(node *corev1.Node) error {
 	return s.ensureNode(node)
@@ -46,6 +61,9 @@ func (s *SensuClient) DeleteNode(nodeName string) error {
 
 // ListEntities will list all the entities in sensu namespace
 func (s *SensuClient) ListEntities(namespace string) ([]types.Entity, error) {
+	if err := s.ensureCredentials(); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure credentials for sensu client")
+	}
 	return s.fetchEntities(namespace)
 }
 
