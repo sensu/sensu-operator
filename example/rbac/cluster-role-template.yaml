@@ -29,6 +29,7 @@ rules:
   - endpoints
   - persistentvolumeclaims
   - events
+  - nodes
   verbs:
   - "*"
 - apiGroups:

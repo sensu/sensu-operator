@@ -129,6 +129,8 @@ func (c *Controller) startProcessing(ctx context.Context) {
 		go wait.Until(c.run, time.Second, ctx.Done())
 	}
 	c.logger.Debugf("done spawning %d worker threads", c.WorkerThreads)
+	c.logger.Debugf("Starting reconcile process on a single thread")
+	go wait.Until(c.runReconcile, time.Second, ctx.Done())
 	select {
 	case <-ctx.Done():
 	}
@@ -182,7 +184,7 @@ func (c *Controller) addInformer(namespace string, resourcePlural string, objTyp
 
 func (c *Controller) run() {
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(6)
 	go func() {
 		defer wg.Done()
 		defer c.informers[api.SensuClusterResourcePlural].queue.ShutDown()
@@ -228,6 +230,26 @@ func (c *Controller) run() {
 	c.logger.Debugf("waiting on all waitgroups to finish")
 	wg.Wait()
 	c.logger.Debugf("waitgroups finished")
+}
+
+func (c *Controller) runReconcile() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.logger.Debugf("starting reconcile k8s nodes <-> sensu entities")
+		for c.processReconcileItems() {
+		}
+	}()
+	c.logger.Debugf("reconcile waitgroups finished")
+	wg.Wait()
+}
+
+func (c *Controller) processReconcileItems() bool {
+	c.logger.Debugf("At processReconcileItems, initiating sync process")
+	c.reconcileSensuEntities()
+	time.Sleep(3 * time.Minute)
+	return true
 }
 
 func (c *Controller) processNextClusterItem() bool {

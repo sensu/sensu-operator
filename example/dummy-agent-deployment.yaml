@@ -2,11 +2,13 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: dummy-service
+  namespace: sensu
 spec:
   replicas: 2
   template:
     metadata:
       name: dummy-service
+      namespace: sensu
       labels:
         app: dummy-service
     spec:
@@ -16,17 +18,14 @@ spec:
           command: ["/opt/sensu/bin/sensu-agent", "start"]
           env:
             - name: SENSU_BACKEND_URL
-              value: ws://example-sensu-cluster-agent.default.svc.cluster.local:8081
+              value: ws://platdev0-agent.sensu.svc.cluster.local:8081
             - name: SENSU_SUBSCRIPTIONS
               value: dummy
+            - name: SENSU_NAMESPACE
+              value: platform
+            - name: SENSU_DEREGISTER
+              value: "true"
+
         - name: dummy-service
           image: busybox
           command: ["/bin/sleep", "100000"]
-      nodeSelector:
-        node-role.kubernetes.io/platform_worker: "true"
-
-      tolerations:
-        - key: "node_role"
-          operator: "Equal"
-          value: "platform_worker"
-          effect: "NoSchedule"
