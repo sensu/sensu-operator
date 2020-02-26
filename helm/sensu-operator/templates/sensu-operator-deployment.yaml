@@ -26,6 +26,10 @@ spec:
       - name: sensu-operator
         image: {{ .Values.image.repository }}:{{ .Chart.AppVersion }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          capabilities:
+            drop:
+            - all
         ports:
         - containerPort: 8080
           name: http
@@ -61,6 +65,14 @@ spec:
           value: {{ .Values.sensu.processingRetries | quote }}
       imagePullSecrets:
       - name: {{ .Values.imagePullSecret.name }}
+      securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      supplementalGroups:
+      - 1000
 {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}

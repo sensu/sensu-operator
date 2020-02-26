@@ -75,3 +75,12 @@ rules:
   - networkpolicies
   verbs:
   - "*"
+# For using pod security policies
+- apiGroups:
+  - extensions
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+  resourceNames:
+  - default
