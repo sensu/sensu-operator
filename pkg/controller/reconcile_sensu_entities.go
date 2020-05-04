@@ -3,8 +3,9 @@ package controller
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	sensu_client "github.com/objectrocket/sensu-operator/pkg/sensu_client"
 	"strings"
+
+	sensu_client "github.com/objectrocket/sensu-operator/pkg/sensu_client"
 )
 
 var (
@@ -56,7 +57,7 @@ func (c *Controller) getK8sNodes() ([]string, error) {
 
 }
 
-// getSensuEntities returns a slice of node names from kubernetes
+// getSensuEntities returns a slice of sensu entities with matching name <-> k8s_node label
 func (c *Controller) getSensuEntities() ([]string, error) {
 	entities := []string{}
 	for clusterName := range c.clusters {
@@ -73,7 +74,13 @@ func (c *Controller) getSensuEntities() ([]string, error) {
 				return nil, nil
 			}
 			for _, sensuEntity := range sensuEntities {
-				entities = append(entities, sensuEntity.GetName())
+				// We only return sensu entities with the label "k8s_node" assigned and matching its entity name. See PLAT-9090 for reference.
+				if nodeName, ok := sensuEntity.GetLabels()["k8s_node"]; ok {
+					if sensuEntity.GetName() == nodeName {
+						c.logger.Debugf("Found Sensu entity: %v with k8s_node label: %v", sensuEntity.GetName(), nodeName)
+						entities = append(entities, nodeName)
+					}
+				}
 			}
 		}
 	}

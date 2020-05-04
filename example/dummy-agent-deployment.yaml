@@ -25,6 +25,8 @@ spec:
               value: platform
             - name: SENSU_DEREGISTER
               value: "true"
+            - name: SENSU_LABELS
+              value: '{"k8s_node": "true"}'
 
         - name: dummy-service
           image: busybox

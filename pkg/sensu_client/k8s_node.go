@@ -137,7 +137,7 @@ func (s *SensuClient) fetchEntities(namespace string) ([]types.Entity, error) {
 			c1 <- fetchEntitiesResponse{nil, errors.Wrapf(err, "failed to retrieve entities from namespace %s", namespace)}
 		}
 		if entities != nil {
-			s.logger.Debugf("found entities %v", entities)
+			s.logger.Debugf("Unfiltered list of sensu entities found: %v", entities)
 			c1 <- fetchEntitiesResponse{entities, nil}
 			return
 		}
