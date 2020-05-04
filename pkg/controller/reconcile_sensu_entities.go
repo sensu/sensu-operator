@@ -3,13 +3,7 @@ package controller
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"strings"
-
 	sensu_client "github.com/objectrocket/sensu-operator/pkg/sensu_client"
-)
-
-var (
-	sensuEntitiesExclusions = [...]string{"sensu-common-cluster-agent"}
 )
 
 // Function to reconcile sensu entities
@@ -103,18 +97,9 @@ func (c *Controller) calculateSensuEntitiesForRemoval(entities []string, nodes [
 					break
 				}
 			}
-			// String not found. We add it to return slice only if not found in the list of exclusions
+			// String not found. We add it to return slice
 			if !found {
-				excluded := false
-				for _, exclusion := range sensuEntitiesExclusions {
-					if strings.Contains(s1, exclusion) {
-						excluded = true
-						break
-					}
-				}
-				if !excluded {
-					diff = append(diff, s1)
-				}
+				diff = append(diff, s1)
 			}
 		}
 	}
