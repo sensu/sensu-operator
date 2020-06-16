@@ -17,6 +17,8 @@ package k8sutil
 import (
 	"encoding/json"
 
+	"fmt"
+
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 
 	v1 "k8s.io/api/core/v1"
@@ -69,7 +71,13 @@ func sensuContainer(cmd []string, repo, version string) v1.Container {
 		Lifecycle: &v1.Lifecycle{
 			PostStart: &v1.Handler{
 				Exec: &v1.ExecAction{
-					Command: []string{"sensu-backend", "init", "--cluster-admin-username", "admin", "--cluster-admin-password", "P@ssw0rd!"},
+					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`
+					sensu-backend init --cluster-admin-username admin --cluster-admin-password P@ssw0rd!
+					if [ $? -eq 3 ]; then
+					  echo "backend already initialized"
+					  exit 0
+					fi
+					exit 0`)},
 				},
 			},
 		},
