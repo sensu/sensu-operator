@@ -66,6 +66,13 @@ func sensuContainer(cmd []string, repo, version string) v1.Container {
 			},
 		},
 		VolumeMounts: etcdVolumeMounts(),
+		Lifecycle: &v1.Lifecycle{
+			PostStart: &v1.Handler{
+				Exec: &v1.ExecAction{
+					Command: []string{"sensu-backend", "init", "--cluster-admin-username", "admin", "--cluster-admin-password", "P@ssw0rd!"},
+				},
+			},
+		},
 	}
 
 	return c
