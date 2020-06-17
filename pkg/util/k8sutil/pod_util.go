@@ -35,7 +35,7 @@ func etcdVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func sensuContainer(cmd []string, repo, version string) v1.Container {
+func sensuContainer(cmd []string, repo, version, clusteradminusername, clusteradminpassword string) v1.Container {
 	c := v1.Container{
 		Command: cmd,
 		Name:    "sensu",
@@ -72,12 +72,12 @@ func sensuContainer(cmd []string, repo, version string) v1.Container {
 			PostStart: &v1.Handler{
 				Exec: &v1.ExecAction{
 					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`
-					sensu-backend init --cluster-admin-username admin --cluster-admin-password P@ssw0rd!
+					sensu-backend init --cluster-admin-username %s --cluster-admin-password %s
 					if [ $? -eq 3 ]; then
 					  echo "backend already initialized"
 					  exit 0
 					fi
-					exit 0`)},
+					exit 0`, clusteradminusername, clusteradminpassword)},
 				},
 			},
 		},
