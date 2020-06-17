@@ -126,7 +126,6 @@ func (c *Controller) handleClusterEvent(event *Event) (bool, error) {
 	}
 
 	clus.SetDefaults()
-	c.logger.Infof("cluster admin username: %s password: %s", clus.Spec.ClusterAdminUsername, clus.Spec.ClusterAdminPassword)
 
 	if err := clus.Spec.Validate(); err != nil {
 		return false, fmt.Errorf("invalid cluster spec. please fix the following problem with the cluster spec: %v", err)
