@@ -26,6 +26,10 @@ const (
 	defaultRepository = "sensu/sensu"
 	// DefaultSensuVersion is the default sensu version
 	DefaultSensuVersion = "5.1.0"
+	// DefaultClusterAdminUsername is the default cluster admin username
+	DefaultClusterAdminUsername = "admin"
+	// DefaultClusterAdminPassword is the default cluster admin password
+	DefaultClusterAdminPassword = "P@ssw0rd!"
 )
 
 var (
@@ -103,6 +107,12 @@ type ClusterSpec struct {
 
 	// sensu cluster TLS configuration
 	TLS *TLSPolicy `json:"TLS,omitempty"`
+
+	// sensu cluster admin username
+	ClusterAdminUsername string `json:"clusteradminusername,omitempty"`
+
+	// sensu cluster admin password
+	ClusterAdminPassword string `json:"clusteradminpassword,omitempty"`
 }
 
 // PodPolicy defines the policy to create pod for the sensu container.
@@ -192,6 +202,14 @@ func (c *SensuCluster) SetDefaults() {
 
 	if len(spec.Version) == 0 {
 		spec.Version = DefaultSensuVersion
+	}
+
+	if len(spec.ClusterAdminUsername) == 0 {
+		spec.ClusterAdminUsername = DefaultClusterAdminUsername
+	}
+
+	if len(spec.ClusterAdminPassword) == 0 {
+		spec.ClusterAdminPassword = DefaultClusterAdminPassword
 	}
 
 	spec.Version = strings.TrimLeft(spec.Version, "v")

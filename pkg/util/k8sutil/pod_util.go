@@ -17,6 +17,8 @@ package k8sutil
 import (
 	"encoding/json"
 
+	"fmt"
+
 	api "github.com/objectrocket/sensu-operator/pkg/apis/objectrocket/v1beta1"
 
 	v1 "k8s.io/api/core/v1"
@@ -33,7 +35,7 @@ func etcdVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func sensuContainer(cmd []string, repo, version string) v1.Container {
+func sensuContainer(cmd []string, repo, version, clusteradminusername, clusteradminpassword string) v1.Container {
 	c := v1.Container{
 		Command: cmd,
 		Name:    "sensu",
@@ -66,6 +68,19 @@ func sensuContainer(cmd []string, repo, version string) v1.Container {
 			},
 		},
 		VolumeMounts: etcdVolumeMounts(),
+		Lifecycle: &v1.Lifecycle{
+			PostStart: &v1.Handler{
+				Exec: &v1.ExecAction{
+					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`
+					sensu-backend init --cluster-admin-username %s --cluster-admin-password %s
+					if [ $? -eq 3 ]; then
+					  echo "backend already initialized"
+					  exit 0
+					fi
+					exit 0`, clusteradminusername, clusteradminpassword)},
+				},
+			},
+		},
 	}
 
 	return c

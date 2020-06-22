@@ -494,7 +494,7 @@ etcd-key-file: %[1]s/server.key
 		MountPath: "/etc/sensu",
 	}
 	container := containerWithProbes(
-		sensuContainer(strings.Split(commands, " "), cs.Repository, cs.Version),
+		sensuContainer(strings.Split(commands, " "), cs.Repository, cs.Version, cs.ClusterAdminUsername, cs.ClusterAdminPassword),
 		livenessProbe,
 		readinessProbe)
 	container.VolumeMounts = append(container.VolumeMounts, configVolumeMount)
