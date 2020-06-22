@@ -7,6 +7,19 @@ references:
         auth:
           username: ${DOCKER_USERNAME}
           password: ${DOCKER_PASSWORD}
+  update-clusters: &update-clusters
+    <<: *docker
+    environment:
+      ENV: SCRATCHPAD
+      CHARTSDIR: helm
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae"
+      - checkout
+      - run:
+          name: update update-clusters
+          command: ~/ci-scripts/update-clusters.sh
 
 jobs:
   markdownlint:
@@ -65,21 +78,34 @@ jobs:
       - run:
           name: Push to S3
           command: ~/ci-scripts/helm_push.sh
-  update-default:
+
+  create-release:
     <<: *docker
-    environment:
-      CHARTSDIR: helm
     steps:
-      - checkout
       - add_ssh_keys:
           fingerprints:
-            - "69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae"
+            - "16:d0:e3:56:a6:14:8c:7d:dd:94:65:f3:3e:dc:7e:0e"
+      - checkout
       - run:
-          name: add helm repo
-          command: ~/ci-scripts/helm_add_repo.sh
-      - run:
-          name: update default cluster
-          command: ~/ci-scripts/update-default-cluster.sh
+          name: create new release
+          command: |
+            ~/ci-scripts/release-it.sh
+
+  update-dev-clusters:
+    <<: *update-clusters
+    environment:
+      ENV: SCRATCHPAD
+
+  update-stage-clusters:
+    <<: *update-clusters
+    environment:
+      ENV: LEAPPAD
+
+  update-prod-clusters:
+    <<: *update-clusters
+    environment:
+      ENV: LAUNCHPAD
+
 workflows:
   version: 2
   # runs on all commits
@@ -98,7 +124,26 @@ workflows:
                 - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
             branches:
               ignore: /.*/
+      - build:
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+            branches:
+              ignore: /.*/
+  release:
+    jobs:
+      - create-release:
+          context: platform-eng
+          filters:
+            branches:
+              only: master
+
+  deploy:
+    jobs:
       - build_deploy:
+          context: platform-eng
           filters:
             tags:
               only:
@@ -117,11 +162,51 @@ workflows:
                 - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
             branches:
               ignore: /.*/
-      - update-default:
+      - update-dev-clusters:
           context: platform-eng
           requires:
-            - build_deploy
             - helm_push
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+            branches:
+              ignore: /.*/
+      - update-stage-clusters:
+          context: platform-eng
+          requires:
+            - update-dev-clusters
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+            branches:
+              ignore: /.*/
+      - slack/approval-notification:
+          message: job pending approval
+          context: platform-eng
+          requires:
+            - update-stage-clusters
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+            branches:
+              ignore: /.*/
+      - hold: # <<< A job that will require manual approval in the CircleCI web application.
+          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "hold" job when stage update has succeeded
+            - update-stage-clusters
+          filters:
+            tags:
+              only:
+                - /^[0-9]+.[0-9]+.[0-9]+$/
+            branches:
+              ignore: /.*/
+      - update-prod-clusters:
+          context: platform-eng
+          requires:
+            - hold
           filters:
             tags:
               only:
