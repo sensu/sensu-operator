@@ -79,6 +79,14 @@ type label struct {
 
 const TolerateUnreadyEndpointsAnnotation = "service.alpha.kubernetes.io/tolerate-unready-endpoints"
 
+func ptrInt64(i int64) *int64 {
+	return &i
+}
+
+func ptrBool(b bool) *bool {
+	return &b
+}
+
 func GetSensuVersion(pod *v1.Pod) string {
 	return pod.Annotations[sensuVersionAnnotationKey]
 }
@@ -568,10 +576,20 @@ etcd-key-file: %[1]s/server.key
 				        fi
 						sleep 1
 					done`, DNSTimeout, clusterName, m.Namespace)},
+					SecurityContext: &v1.SecurityContext{
+						RunAsUser:                ptrInt64(65534),
+						RunAsGroup:               ptrInt64(65534),
+						AllowPrivilegeEscalation: ptrBool(false),
+					},
 				},
 				{
 					Image: imageNameBusybox(cs.Pod),
 					Name:  "make-sensu-config",
+					SecurityContext: &v1.SecurityContext{
+						RunAsUser:                ptrInt64(65534),
+						RunAsGroup:               ptrInt64(65534),
+						AllowPrivilegeEscalation: ptrBool(false),
+					},
 					Command: []string{"/bin/sh", "-c", fmt.Sprintf(`HOSTNAME=$(hostname)
 ORDINAL=${HOSTNAME##*-}
 TOKEN=%s
@@ -607,6 +625,8 @@ cat /etc/sensu/backend.yml
 			Containers:    []v1.Container{container},
 			RestartPolicy: v1.RestartPolicyAlways,
 			Volumes:       volumes,
+			// This is a hack, this likely should be exposed in the sensucluster rbac specification
+			ServiceAccountName: "sensu-operator",
 			// DNS A record: `[m.Name].[clusterName].Namespace.svc`
 			// For example, etcd-795649v9kq in default namesapce will have DNS name
 			// `etcd-795649v9kq.etcd.default.svc`.
