@@ -458,7 +458,7 @@ func NewSensuPodPVC(m *etcdutil.MemberConfig, pvcSpec v1.PersistentVolumeClaimSp
 
 func newSensuPodTemplate(m *etcdutil.MemberConfig, clusterName, token string, cs api.ClusterSpec) *v1.PodTemplateSpec {
 	commands := "/usr/local/bin/sensu-backend start -c /etc/sensu/backend.yml"
-	options := fmt.Sprintf(`log-level: debug
+	options := fmt.Sprintf(`log-level: info
 state-dir: %s
 etcd-name: "$HOSTNAME"
 etcd-initial-advertise-peer-urls: "http://${LOCAL_HOSTNAME}:2380"
