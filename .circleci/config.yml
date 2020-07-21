@@ -44,7 +44,8 @@ jobs:
       - image: circleci/golang:1.10
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: Build the server binary and docker image
           command: make docker-build IMAGE_VERSION=latest
@@ -63,7 +64,8 @@ jobs:
       - image: circleci/golang:1.10
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
           name: docker login
           command: |
