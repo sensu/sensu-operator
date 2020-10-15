@@ -5,6 +5,13 @@ metadata:
   name: sensu
 
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensu-operator
+  namespace: sensu
+
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
