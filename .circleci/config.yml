@@ -28,6 +28,9 @@ jobs:
   markdownlint:
     docker:
       - image: circleci/node:10.14.2
+        auth:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
     steps:
       - checkout
       - run:
@@ -42,6 +45,9 @@ jobs:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
       - image: circleci/golang:1.10
+        auth:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
     steps:
       - checkout
       - setup_remote_docker:
@@ -53,6 +59,9 @@ jobs:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
       - image: circleci/golang:1.10
+        auth:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
     steps:
       - checkout
       - run:
@@ -62,6 +71,9 @@ jobs:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
       - image: circleci/golang:1.10
+        auth:
+          username: ${DOCKER_USERNAME}
+          password: ${DOCKER_PASSWORD}
     steps:
       - checkout
       - setup_remote_docker:
@@ -117,14 +129,17 @@ workflows:
   build_and_test:
     jobs:
       - markdownlint:
+          context: platform-eng
           filters:
             branches:
               ignore: master
       - unit_test:
+          context: platform-eng
           filters:
             branches:
               ignore: master
       - build:
+          context: platform-eng
           filters:
             branches:
               ignore: master
