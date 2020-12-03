@@ -63,7 +63,7 @@ func (c *Controller) syncSensuHandler(handler *api.SensuHandler) {
 		}
 	}
 	if !c.clusterExists(handler.Spec.SensuMetadata.ClusterName) {
-		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply handler: %+v", handler.Spec.SensuMetadata.ClusterName, handler)
+		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply handler", handler.Spec.SensuMetadata.ClusterName)
 		copy := handler.DeepCopy()
 		copy.Status.Accepted = false
 		copy.Status.LastError = fmt.Sprintf("Sensu cluster '%s' not found", handler.Spec.SensuMetadata.ClusterName)

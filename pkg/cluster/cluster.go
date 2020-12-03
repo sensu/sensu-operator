@@ -512,7 +512,9 @@ func (c *Cluster) logClusterCreation() {
 
 	c.logger.Info("creating cluster with Spec:")
 	for _, m := range strings.Split(string(specBytes), "\n") {
-		c.logger.Info(m)
+		if !strings.Contains(m, "password") {
+			c.logger.Info(m)
+		}
 	}
 }
 
@@ -528,12 +530,16 @@ func (c *Cluster) logSpecUpdate(oldSpec, newSpec api.ClusterSpec) {
 
 	c.logger.Infof("spec update: Old Spec:")
 	for _, m := range strings.Split(string(oldSpecBytes), "\n") {
-		c.logger.Info(m)
+		if !strings.Contains(m, "password") {
+			c.logger.Info(m)
+		}
 	}
 
 	c.logger.Infof("New Spec:")
 	for _, m := range strings.Split(string(newSpecBytes), "\n") {
-		c.logger.Info(m)
+		if !strings.Contains(m, "password") {
+			c.logger.Info(m)
+		}
 	}
 
 }

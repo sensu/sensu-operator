@@ -66,7 +66,7 @@ func (c *Controller) syncSensuCheckConfig(checkConfig *api.SensuCheckConfig) {
 	}
 
 	if !c.clusterExists(checkConfig.Spec.SensuMetadata.ClusterName) {
-		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply checkConfig: %+v", checkConfig.Spec.SensuMetadata.ClusterName, checkConfig)
+		c.logger.Errorf("sensu cluster '%s' isn't managed by this operator while trying to apply checkConfig", checkConfig.Spec.SensuMetadata.ClusterName)
 		copy := checkConfig.DeepCopy()
 		copy.Status.Accepted = false
 		copy.Status.LastError = fmt.Sprintf("Sensu cluster '%s' not found", checkConfig.Spec.SensuMetadata.ClusterName)
