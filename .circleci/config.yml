@@ -3,23 +3,29 @@ version: 2.1
 references:
   platform-docker: &docker
     docker:
-      - image: objectrocket/platform-cicd:latest
-        auth:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+    - image: objectrocket/platform-cicd:latest
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
+  context-to-use: &context-to-use
+    context: objectrocket-shared
+  objectrocket-docker-auth:
+    auth:
+      username: ${DOCKER_USERNAME}
+      password: ${DOCKER_PASSWORD}
   update-clusters: &update-clusters
     <<: *docker
     environment:
       ENV: SCRATCHPAD
       CHARTSDIR: helm
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae"
-      - checkout
-      - run:
-          name: update update-clusters
-          command: ~/ci-scripts/update-clusters.sh
+    - add_ssh_keys:
+        fingerprints:
+        - 69:52:7a:2e:29:b7:ba:aa:5e:59:98:14:f9:8b:d4:ae
+    - checkout
+    - run:
+        name: update update-clusters
+        command: ~/ci-scripts/update-clusters.sh
 
 orbs:
   slack: circleci/slack@3.4.2
@@ -27,86 +33,86 @@ orbs:
 jobs:
   markdownlint:
     docker:
-      - image: circleci/node:10.14.2
-        auth:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+    - image: circleci/node:10.14.2
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
     steps:
-      - checkout
-      - run:
-          name: install markdownlint
-          command: |
-            sudo npm install -g markdownlint-cli
-            markdownlint --version
-      - run:
-          name: lint README.md
-          command: markdownlint --config .markdownlint.json README.md
+    - checkout
+    - run:
+        name: install markdownlint
+        command: |
+          sudo npm install -g markdownlint-cli
+          markdownlint --version
+    - run:
+        name: lint README.md
+        command: markdownlint --config .markdownlint.json README.md
   build:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
-      - image: circleci/golang:1.10
-        auth:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+    - image: circleci/golang:1.10
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
     steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Build the server binary and docker image
-          command: make docker-build IMAGE_VERSION=latest
+    - checkout
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        name: Build the server binary and docker image
+        command: make docker-build IMAGE_VERSION=latest
   unit_test:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
-      - image: circleci/golang:1.10
-        auth:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+    - image: circleci/golang:1.10
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
     steps:
-      - checkout
-      - run:
-          name: go tests
-          command: make unittest
+    - checkout
+    - run:
+        name: go tests
+        command: make unittest
   build_deploy:
     working_directory: /go/src/github.com/objectrocket/sensu-operator
     docker:
-      - image: circleci/golang:1.10
-        auth:
-          username: ${DOCKER_USERNAME}
-          password: ${DOCKER_PASSWORD}
+    - image: circleci/golang:1.10
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
     steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: docker login
-          command: |
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run:
-          name: docker build and push
-          command: |
-            make docker-push IMAGE_VERSION=${CIRCLE_TAG}
+    - checkout
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        name: docker login
+        command: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+    - run:
+        name: docker build and push
+        command: |
+          make docker-push IMAGE_VERSION=${CIRCLE_TAG}
   helm_push:
     <<: *docker
     environment:
       CHARTSDIR: helm
     steps:
-      - checkout
-      - run:
-          name: Push to S3
-          command: ~/ci-scripts/helm_push.sh
+    - checkout
+    - run:
+        name: Push to S3
+        command: ~/ci-scripts/helm_push.sh
 
   create-release:
     <<: *docker
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "16:d0:e3:56:a6:14:8c:7d:dd:94:65:f3:3e:dc:7e:0e"
-      - checkout
-      - run:
-          name: create new release
-          command: |
-            ~/ci-scripts/release-it.sh
+    - add_ssh_keys:
+        fingerprints:
+        - 16:d0:e3:56:a6:14:8c:7d:dd:94:65:f3:3e:dc:7e:0e
+    - checkout
+    - run:
+        name: create new release
+        command: |
+          ~/ci-scripts/release-it.sh
 
   update-dev-clusters:
     <<: *update-clusters
@@ -128,99 +134,100 @@ workflows:
   # runs on all commits
   build_and_test:
     jobs:
-      - markdownlint:
-          context: platform-eng
-          filters:
-            branches:
-              ignore: master
-      - unit_test:
-          context: platform-eng
-          filters:
-            branches:
-              ignore: master
-      - build:
-          context: platform-eng
-          filters:
-            branches:
-              ignore: master
+    - markdownlint:
+        context: platform-eng
+        filters:
+          branches:
+            ignore: master
+    - unit_test:
+        context: platform-eng
+        filters:
+          branches:
+            ignore: master
+    - build:
+        context: platform-eng
+        filters:
+          branches:
+            ignore: master
   release:
     jobs:
-      - create-release:
-          context: platform-eng
-          filters:
-            branches:
-              only: master
+    - create-release:
+        context: platform-eng
+        filters:
+          branches:
+            only: master
 
   deploy:
     jobs:
-      - build_deploy:
-          context: platform-eng
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
-            branches:
-              ignore: /.*/
-      - helm_push:
-          context: platform-eng
-          requires:
-            - build_deploy
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-                - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
-            branches:
-              ignore: /.*/
-      - update-dev-clusters:
-          context: platform-eng
-          requires:
-            - helm_push
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-            branches:
-              ignore: /.*/
-      - update-stage-clusters:
-          context: platform-eng
-          requires:
-            - update-dev-clusters
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-            branches:
-              ignore: /.*/
-      - slack/approval-notification:
-          message: job pending approval
-          context: platform-eng
-          requires:
-            - update-stage-clusters
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-            branches:
-              ignore: /.*/
-      - hold: # <<< A job that will require manual approval in the CircleCI web application.
-          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
-          requires: # We only run the "hold" job when stage update has succeeded
-            - update-stage-clusters
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-            branches:
-              ignore: /.*/
-      - update-prod-clusters:
-          context: platform-eng
-          requires:
-            - hold
-          filters:
-            tags:
-              only:
-                - /^[0-9]+.[0-9]+.[0-9]+$/
-            branches:
-              ignore: /.*/
+    - build_deploy:
+        context: platform-eng
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+            - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+          branches:
+            ignore: /.*/
+    - helm_push:
+        context: platform-eng
+        requires:
+        - build_deploy
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+            - /^[0-9]+.[0-9]+.[0-9]+-rc[0-9]+$/
+          branches:
+            ignore: /.*/
+    - update-dev-clusters:
+        context: platform-eng
+        requires:
+        - helm_push
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+          branches:
+            ignore: /.*/
+    - update-stage-clusters:
+        context: platform-eng
+        requires:
+        - update-dev-clusters
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+          branches:
+            ignore: /.*/
+    - slack/approval-notification:
+        message: job pending approval
+        context: platform-eng
+        requires:
+        - update-stage-clusters
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+          branches:
+            ignore: /.*/
+    - hold:   # <<< A job that will require manual approval in the CircleCI web application.
+        <<: *context-to-use
+        type: approval   # <<< This key-value pair will set your workflow to a status of "On Hold"
+        requires:   # We only run the "hold" job when stage update has succeeded
+        - update-stage-clusters
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+          branches:
+            ignore: /.*/
+    - update-prod-clusters:
+        context: platform-eng
+        requires:
+        - hold
+        filters:
+          tags:
+            only:
+            - /^[0-9]+.[0-9]+.[0-9]+$/
+          branches:
+            ignore: /.*/
