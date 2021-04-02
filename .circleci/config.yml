@@ -28,8 +28,7 @@ references:
         command: ~/ci-scripts/update-clusters.sh
 
 orbs:
-  slack: circleci/slack@3.4.2
-
+  ms_teams_notification: pay-justice/ms-teams-webhooks@0.0.1
 jobs:
   markdownlint:
     docker:
@@ -129,6 +128,26 @@ jobs:
     environment:
       ENV: LAUNCHPAD
 
+  approval-notification:
+    docker:
+    - image: cimg/base:2020.01
+      auth:
+        username: ${DOCKER_USERNAME}
+        password: ${DOCKER_PASSWORD}
+    steps:
+    - checkout
+    - run:
+        name: Trigger Success
+        command: exit 0
+    - ms_teams_notification/send_simple_card:
+        webhook_url: ${MS_TEAMS_WEBHOOK_URL}
+        title: Approval Needed
+        text: >-
+          Approval needed to deploy
+          [${CIRCLE_PROJECT_REPONAME}/${CIRCLE_SHA1:0:7}](https://github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1})
+          tagged as $CIRCLE_TAG,
+
+          Click Here to Approve: [${CIRCLE_BUILD_NUM}](https://circleci.com/workflow-run/${CIRCLE_WORKFLOW_ID})
 workflows:
   version: 2
   # runs on all commits
@@ -199,15 +218,14 @@ workflows:
             - /^[0-9]+.[0-9]+.[0-9]+$/
           branches:
             ignore: /.*/
-    - slack/approval-notification:
-        message: job pending approval
+    - approval-notification:
         context: platform-eng
         requires:
         - update-stage-clusters
         filters:
           tags:
             only:
-            - /^[0-9]+.[0-9]+.[0-9]+$/
+            - /^v*[0-9]+.[0-9]+.[0-9]+$/
           branches:
             ignore: /.*/
     - hold:   # <<< A job that will require manual approval in the CircleCI web application.
