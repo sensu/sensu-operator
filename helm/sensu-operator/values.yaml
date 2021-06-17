@@ -28,7 +28,7 @@ resourceSettings:
 logLevel: info
 
 nodeSelector:
-  node-role.kubernetes.io/platform_worker: "true"
+  kubernetes.io/role: "agent"
 
 tolerations:
   - effect: NoSchedule
@@ -53,4 +53,4 @@ sensu:
   processingRetries: 5
 
 prometheus:
-  enabled: true
+  enabled: false
