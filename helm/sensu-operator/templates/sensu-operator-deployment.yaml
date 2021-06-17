@@ -66,13 +66,13 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.imagePullSecret.name }}
       securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      fsGroup: 1000
-      allowPrivilegeEscalation: false
-      runAsNonRoot: true
-      supplementalGroups:
-      - 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        # allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        supplementalGroups:
+        - 1000
 {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}

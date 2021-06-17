@@ -84,3 +84,4 @@ rules:
   - use
   resourceNames:
   - default
+  - sensu
